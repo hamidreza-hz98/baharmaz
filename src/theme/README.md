@@ -1,0 +1,7 @@
+# RTL foundation
+
+The working light palette, spacing and logo treatment follow the HTML references in `design/components` and `design/notes`. Those notes describe the palette and visual components as provisional; confirm final approval before treating this task as complete. The original logo is copied byte-for-byte to `public/brand` and is not recolored or cropped. The bundled Vazirmatn font is copied from the supplied design assets with its SIL OFL license alongside it.
+
+`AppThemeProvider` combines MUI's App Router cache with the RTL Stylis plugin, a Persian locale and the shared light theme. The document sets RTL globally, including portals. Use `IsolatedText` for mixed-direction codes and numbers. `src/shared/ui/primitives.tsx` provides form, dialog, data region, feedback, status and page-state starting points; each real use must supply meaningful labels, text and appropriate error/recovery behavior. `src/theme/tokens.ts` records responsive grid starting points.
+
+Run `npm run test:foundation` after installing Playwright Chromium. It temporarily creates a fixture route and starts a development server on port 3183 to check server-rendered styles, hydration errors, RTL, focus, dialog keyboard behavior, contrast and mobile/desktop overflow. It removes the route afterward. Do not run it concurrently with other Next builds or development servers. It is not a substitute for a full screen-by-screen accessibility review against the final design.
