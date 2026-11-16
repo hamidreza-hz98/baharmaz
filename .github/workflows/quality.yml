@@ -1,0 +1,38 @@
+name: Quality
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run test:boundaries
+      - name: Install isolated MongoDB test binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=mongodb-linux-x86_64-ubuntu2404-8.0.16.tgz
+          curl --fail --silent --show-error --location --retry 3 -O "https://fastdl.mongodb.org/linux/$archive"
+          curl --fail --silent --show-error --location --retry 3 -O "https://fastdl.mongodb.org/linux/$archive.sha256"
+          sha256sum --check "$archive.sha256"
+          tar -xzf "$archive"
+          echo "$PWD/${archive%.tgz}/bin" >> "$GITHUB_PATH"
+      - run: npm run test:database
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run test:foundation

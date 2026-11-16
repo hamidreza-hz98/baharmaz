@@ -1,0 +1,43 @@
+# Dependencies and package manager caches
+node_modules/
+node_modules_artifact_temp/
+.pnp.*
+.yarn/cache/
+
+# Next.js and build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local configuration and secrets
+.env*
+!.env.example
+*.pem
+*.key
+
+# Logs and test output
+*.log
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Local editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local design references and planning artifacts
+design/
+assets/reference/
+figma-design-state.json
+FIGMA-*.md
+UI-UX-FIGMA-TASKS.md
+IMPLEMENTATION-TASKS.md
+
+# Local product data entry files
+/data entry/
