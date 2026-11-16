@@ -1,0 +1,13 @@
+node_modules
+.next
+coverage
+package-lock.json
+assets
+IMPLEMENTATION-TASKS.md
+UI-UX-FIGMA-TASKS.md
+FIGMA-*.md
+figma-design-state.json
+design
+
+playwright-report
+test-results
