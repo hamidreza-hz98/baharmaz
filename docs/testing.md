@@ -1,0 +1,13 @@
+# Testing and CI
+
+Install Node.js 24 and npm 11, then `npm ci`. Tests use synthetic public sample content; do not add real customer data or credentials to fixtures. Current application flows do not integrate external providers. The browser suite blocks cross-origin requests; future SMS, payment, map and other provider integrations must use explicit fakes in tests and must never send live requests.
+
+- `npm run test:unit` runs Node's focused domain, configuration and dependency-boundary tests.
+- `npm run test:integration` runs the isolated MongoDB lifecycle smoke test. Install `mongod` and put it on PATH, or set `MONGOD_BINARY` to its absolute path. The test creates its own loopback server, temporary data directory and app server; it exercises readiness, outage and recovery. Failed runs retain the named temporary directory for diagnosis. It never connects to an environment-provided MongoDB URI.
+- Run `npx playwright install chromium` once, then `npm run build` followed by `npm run test:e2e`. The test starts a temporary loopback MongoDB instance and a fresh production server at `127.0.0.1:3171`, then tests desktop and mobile viewports. Install `mongod` on PATH or set `MONGOD_BINARY`; it never uses a production database. It will fail if that port is already in use. When a browser download is unavailable, `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can point to an installed Chrome/Chromium for a local smoke run; CI uses the Playwright-managed browser.
+- `npm run test:boundaries` temporarily creates a route and confirms that Next.js refuses a client import of server-only code. It intentionally runs a failing build and cleans up its probe. Do not run this, integration, browser tests or another Next build/dev server concurrently in the same workspace; each uses the `.next` directory. Rebuild before the browser suite.
+- `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm run build` provide the quality checks. `npm run format` formats project-owned files; design references and checklists are excluded.
+
+GitHub Actions (`.github/workflows/quality.yml`) runs these checks on pushes, pull requests and manual dispatch. It downloads a versioned MongoDB binary and verifies its published checksum, runs the isolated integration test, builds the app and installs Playwright Chromium for the browser tests. No production environment variables, credentials, live services or production data are required. The workflow has not been observed on a hosted runner until the repository is pushed and Actions executes it.
+
+- `npm run test:foundation` runs the temporary RTL component fixture at desktop and mobile sizes; see [RTL foundation](../src/theme/README.md). Run it separately from builds and other Next servers.
