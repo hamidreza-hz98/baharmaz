@@ -1,0 +1,11 @@
+# Public catalog
+
+`/products` lists active products, including unavailable products with disabled add actions. `/categories/[slug]` filters by category and generates category metadata; `/products/[slug]` shows product details and generates product metadata. Archived and nonexistent product/category pages are not found. Product descriptions are rendered as plain text. Public media exposes validated WebP images referenced by active products, active categories or published homepage/about settings; other library files stay private. Public images may be cached for up to 60 seconds after a reference is removed.
+
+Listing cursors use the sort value and unique product ID rather than offsets; filters and ordering are validated and bound into each cursor. Newest uses creation time; price sorts use the discounted selling price when present. IDs break ties, and the client deduplicates repeated results. Prices can change between requests, so price sorting is not a frozen snapshot: a product that moves across the cursor can be omitted until the list is refreshed. Filters show up to 5,000 active categories. Automatic loading is limited to two additional pages per filter selection; the accessible load-more button continues afterwards so the footer remains reachable. Failed requests can be retried without losing loaded products.
+
+Product add actions now use the persistent server cart; see `docs/cart.md` for pricing, guest merge and shipping limitations.
+
+The integration suite uses isolated MongoDB to check public fields, media access, cursor validation and page uniqueness for all sorting modes. The foundation browser test covers retry and duplicate suppression at desktop and mobile sizes. To exercise the production build with a real browser, run `npm run build`, then set `CATALOG_BROWSER_EXECUTABLE` and `MONGOD_BINARY` before `npm run test:integration`. Public canonical URLs, sitemap limits and structured-data behavior are documented in `indexing.md`.
+
+The shared root loading boundary can start streaming before a missing product or category is resolved. In that case Next.js renders the not-found page and noindex metadata but the HTTP status can already be 200; a true HTTP 404 remains outstanding and the checklist item must stay open until the loading-boundary design is corrected and verified.
