@@ -36,11 +36,11 @@ test("map failure and reverse failure preserve manual address and chosen coordin
   await dialog.getByLabel("نام گیرنده").fill("نام گیرنده");
   await dialog.getByLabel("شماره همراه گیرنده").fill("۰۹۱۲۳۴۵۶۷۸۹");
   await dialog.getByLabel("نشانی کامل").fill("نشانی دستی ویرایش شده");
-  await dialog.getByRole("button", { name: "نمایش نقشه" }).click();
   const map = dialog.getByRole("application");
   await expect(map).toBeVisible();
   await expect(dialog.getByText(/تصاویر نقشه در دسترس نیست/)).toBeVisible();
   await map.click({ position: { x: 100, y: 100 } });
+  await dialog.getByText("ورود دستی مختصات").click();
   await expect(dialog.getByLabel("عرض جغرافیایی")).not.toHaveValue("");
   page.on("dialog", (d) => d.accept());
   await dialog.getByRole("button", { name: "پیشنهاد نشانی از مختصات" }).click();
@@ -88,7 +88,6 @@ test("configured map renders tiles and attribution without contacting a live pro
   await page.goto("/address-test-probe");
   await page.getByRole("button", { name: "افزودن نشانی" }).click();
   const dialog = page.getByRole("dialog", { name: "افزودن نشانی" });
-  await dialog.getByRole("button", { name: "نمایش نقشه" }).click();
   await expect(dialog.locator(".leaflet-tile-loaded").first()).toBeVisible();
   await expect(dialog.getByText("نمونه نقشه")).toBeVisible();
 });
