@@ -108,11 +108,16 @@ try {
   assert.equal(registration.status, "registration");
   const session = await registerVerifiedCustomer(
     registration.token,
-    "کاربر نمونه",
-    "a-long-test-password",
-    "a-long-test-password",
+    "کاربر",
+    "نمونه",
+    "12345678",
+    "12345678",
   );
   assert.ok(await resolveSession(session.token, "customer"));
+  const registered = await Customer.findOne({ mobile: newPhone }).lean();
+  assert.equal(registered.firstName, "کاربر");
+  assert.equal(registered.lastName, "نمونه");
+  assert.equal(registered.name, "کاربر نمونه");
   assert.equal(
     (await Customer.findOne({ mobile: newPhone }).lean()).mobileVerified,
     true,
@@ -120,7 +125,8 @@ try {
   await assert.rejects(
     registerVerifiedCustomer(
       registration.token,
-      "کاربر نمونه",
+      "کاربر",
+      "نمونه",
       "a-long-test-password",
       "a-long-test-password",
     ),
