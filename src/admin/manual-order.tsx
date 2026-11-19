@@ -3,6 +3,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PersonPinCircleOutlinedIcon from "@mui/icons-material/PersonPinCircleOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import { PriceBreakdown } from "@/storefront/cart/price-breakdown";
 import { formatMoney } from "@/shared/locale";
 type Person = { id: string; name: string; mobile: string };
 type Product = {
@@ -164,22 +174,46 @@ export function ManualOrder() {
     if (result) setPreview(result);
   }
   return (
-    <>
-      <Button
-        component={Link}
-        href="/admin/orders"
-        variant="outlined"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-      >
-        بازگشت به سفارش‌ها
-      </Button>
-      <h1>پیش‌نویس سفارش دستی</h1>
-      <p>این صفحه فقط پیش‌نمایش است؛ ثبت سفارش هنوز در دسترس نیست.</p>
-      {error && <p role="alert">{error}</p>}
+    <div className="manual-order-page">
+      <div className="manual-order-heading">
+        <div className="manual-order-heading-title">
+          <span>
+            <ReceiptLongOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h1>پیش‌نویس سفارش دستی</h1>
+            <p>انتخاب مشتری، محصولات و زمان تحویل برای محاسبه سفارش</p>
+          </div>
+        </div>
+        <Button
+          component={Link}
+          href="/admin/orders"
+          variant="outlined"
+          size="small"
+          startIcon={<ArrowBackIcon />}
+        >
+          بازگشت به سفارش‌ها
+        </Button>
+      </div>
+      <p className="manual-order-notice">
+        <InfoOutlinedIcon aria-hidden="true" /> این صفحه فقط پیش‌نمایش است؛ ثبت
+        سفارش هنوز در دسترس نیست.
+      </p>
+      {error && (
+        <p role="alert" className="manual-order-error">
+          {error}
+        </p>
+      )}
       <form onSubmit={calculate} className="dashboard-panel manual-order-form">
         <fieldset disabled={busy}>
-          <legend>انتخاب مشتری و نشانی</legend>
+          <legend>
+            <span className="manual-order-legend">
+              <span className="manual-order-section-icon">
+                <PersonPinCircleOutlinedIcon aria-hidden="true" />
+              </span>{" "}
+              انتخاب مشتری و نشانی
+            </span>
+          </legend>
           <label>
             جست‌وجوی مشتری
             <input
@@ -245,12 +279,26 @@ export function ManualOrder() {
           {customerId && !addresses.length && (
             <p>برای این مشتری نشانی موجودی نمایش داده نمی‌شود.</p>
           )}
-          <button type="button" disabled={!addressId} onClick={loadOptions}>
+          <Button
+            className="manual-order-action"
+            type="button"
+            variant="outlined"
+            startIcon={<EventAvailableOutlinedIcon />}
+            disabled={!addressId || busy}
+            onClick={loadOptions}
+          >
             دریافت زمان‌های ارسال
-          </button>
+          </Button>
         </fieldset>
         <fieldset disabled={busy}>
-          <legend>محصولات</legend>
+          <legend>
+            <span className="manual-order-legend">
+              <span className="manual-order-section-icon">
+                <Inventory2OutlinedIcon aria-hidden="true" />
+              </span>{" "}
+              محصولات
+            </span>
+          </legend>
           <label>
             جست‌وجوی محصول
             <input
@@ -288,7 +336,10 @@ export function ManualOrder() {
               onChange={(e) => setQuantity(Number(e.target.value))}
             />
           </label>
-          <button
+          <Button
+            className="manual-order-action"
+            variant="outlined"
+            startIcon={<AddCircleOutlineOutlinedIcon />}
             type="button"
             disabled={
               !productId ||
@@ -307,12 +358,14 @@ export function ManualOrder() {
             }}
           >
             افزودن یا ویرایش محصول
-          </button>
+          </Button>
           {items.length ? (
             items.map((item) => (
-              <p key={item.productId}>
+              <p className="manual-order-item" key={item.productId}>
                 {item.title} — {item.quantity.toLocaleString("fa-IR")} عدد{" "}
-                <button
+                <Button
+                  size="small"
+                  startIcon={<DeleteOutlineOutlinedIcon />}
                   type="button"
                   onClick={() => {
                     setItems((current) =>
@@ -322,15 +375,25 @@ export function ManualOrder() {
                   }}
                 >
                   حذف {item.title}
-                </button>
+                </Button>
               </p>
             ))
           ) : (
-            <p>محصولی انتخاب نشده است.</p>
+            <p className="manual-order-empty">
+              <Inventory2OutlinedIcon aria-hidden="true" /> محصولی انتخاب نشده
+              است.
+            </p>
           )}
         </fieldset>
         <fieldset disabled={busy}>
-          <legend>تحویل و انتقال بانکی</legend>
+          <legend>
+            <span className="manual-order-legend">
+              <span className="manual-order-section-icon">
+                <LocalShippingOutlinedIcon aria-hidden="true" />
+              </span>{" "}
+              تحویل و انتقال بانکی
+            </span>
+          </legend>
           <label>
             تاریخ ارسال
             <select
@@ -389,17 +452,32 @@ export function ManualOrder() {
               <option value="admin_confirmed">انتقال تأییدشده توسط مدیر</option>
             </select>
           </label>
-          <p>
+          <p className="manual-order-note">
+            <InfoOutlinedIcon aria-hidden="true" />
             تأیید مدیر یک اظهار دستی است و تأیید درگاه پرداخت محسوب نمی‌شود.
           </p>
-          <button type="submit" disabled={!items.length || !slotId}>
+          <Button
+            className="manual-order-action manual-order-submit"
+            type="submit"
+            variant="contained"
+            startIcon={<CalculateOutlinedIcon />}
+            disabled={busy || !items.length || !slotId}
+          >
             {busy ? "در حال محاسبه…" : "محاسبه پیش‌نمایش"}
-          </button>
+          </Button>
         </fieldset>
       </form>
       {preview && (
-        <section className="dashboard-panel" aria-live="polite">
-          <h2>پیش‌نمایش محاسبه‌شده</h2>
+        <section
+          className="dashboard-panel manual-order-preview"
+          aria-live="polite"
+        >
+          <div className="manual-order-preview-heading">
+            <span className="manual-order-section-icon">
+              <CalculateOutlinedIcon aria-hidden="true" />
+            </span>
+            <h2>پیش‌نمایش محاسبه‌شده</h2>
+          </div>
           <p>
             {preview.customer.name} — {preview.delivery.date}،{" "}
             {preview.delivery.slotLabel}
@@ -418,18 +496,21 @@ export function ManualOrder() {
               {formatMoney(item.lineRials)}
             </p>
           ))}
-          <p>
-            جمع کالا: {formatMoney(preview.subtotalRials)}، تخفیف:{" "}
-            {formatMoney(preview.discountRials)}، ارسال:{" "}
-            {formatMoney(preview.shippingRials)}، مجموع:{" "}
-            {formatMoney(preview.totalRials)}
-          </p>
+          <div className="manual-order-preview-prices cart-totals">
+            <PriceBreakdown
+              subtotalRials={preview.subtotalRials}
+              discountRials={preview.discountRials}
+              itemsTotalRials={preview.subtotalRials - preview.discountRials}
+              shippingRials={preview.shippingRials}
+              totalRials={preview.totalRials}
+            />
+          </div>
           <p>این مبلغ و زمان هنگام ثبت نهایی باید دوباره بررسی شوند.</p>
           <button type="button" disabled>
             ثبت سفارش در دسترس نیست
           </button>
         </section>
       )}
-    </>
+    </div>
   );
 }
