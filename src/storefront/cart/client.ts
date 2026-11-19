@@ -1,3 +1,8 @@
+export const cartChangedEvent = "lamsechi-cart-changed";
+export function notifyCartChanged(cart: unknown) {
+  window.dispatchEvent(new CustomEvent(cartChangedEvent, { detail: cart }));
+}
+
 export async function cartRequest(body: object) {
   const response = await fetch("/api/cart", {
     method: "POST",
