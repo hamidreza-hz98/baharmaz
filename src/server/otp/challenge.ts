@@ -66,7 +66,13 @@ export async function issueOtp(
     { _id: mobile, windowStart: { $lte: new Date(now.getTime() - 3600000) } },
     { $set: { windowStart: now, sends: 0 } },
   );
-  const code = String(randomInt(0, 10000)).padStart(4, "0");
+  const developmentCode =
+    env.NODE_ENV === "development" &&
+    env.SMS_PROVIDER === "development" &&
+    env.OTP_DEV_LOG_CODES === "true";
+  const code = developmentCode
+    ? "1234"
+    : String(randomInt(0, 10000)).padStart(4, "0");
   const issue = randomBytes(16).toString("hex");
   const challenge = await OtpChallenge.findOneAndUpdate(
     {
