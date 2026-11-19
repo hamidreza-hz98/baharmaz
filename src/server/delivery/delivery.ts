@@ -115,7 +115,7 @@ async function addressFor(customer: string, addressId: string) {
   if (!row) throw new DeliveryNotFound();
   return row;
 }
-function fingerprint(cart: Awaited<ReturnType<typeof readCart>>) {
+export function cartFingerprint(cart: Awaited<ReturnType<typeof readCart>>) {
   return createHash("sha256")
     .update(
       JSON.stringify({
@@ -226,7 +226,7 @@ export async function createQuote(
     addressId: validId(addressId),
     addressRevision: address.revision,
     policyRevision: settings.revision,
-    cartFingerprint: fingerprint(cart),
+    cartFingerprint: cartFingerprint(cart),
     date: parsed,
     slotId,
     zoneId: match.zone.id,
@@ -270,7 +270,7 @@ export async function validateQuote(
       !settings.policy ||
       settings.revision !== q.policyRevision ||
       address.revision !== q.addressRevision ||
-      fingerprint(cart) !== q.cartFingerprint
+      cartFingerprint(cart) !== q.cartFingerprint
     )
       throw new DeliveryUnavailable("quote_changed");
     const match =
