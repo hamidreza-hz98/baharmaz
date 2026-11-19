@@ -79,9 +79,15 @@ function normalizeColor(value: string | undefined) {
 export function RichDescriptionEditor({
   value,
   onChange,
+  label = "توضیحات محصول",
+  maxLength = 10000,
+  disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
+  label?: string;
+  maxLength?: number;
+  disabled?: boolean;
 }) {
   const last = useRef(value);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -111,7 +117,7 @@ export function RichDescriptionEditor({
         dir: "rtl",
         role: "textbox",
         "aria-multiline": "true",
-        "aria-label": "توضیحات محصول",
+        "aria-label": label,
         class: "rich-editor-content",
       },
     },
@@ -129,6 +135,9 @@ export function RichDescriptionEditor({
       last.current = value;
     }
   }, [editor, value]);
+  useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [editor, disabled]);
   if (!editor)
     return (
       <Box className="rich-editor-loading">در حال آماده‌سازی ویرایشگر…</Box>
@@ -294,7 +303,7 @@ export function RichDescriptionEditor({
   return (
     <Box className="rich-editor" dir="rtl">
       <Typography component="div" className="rich-editor-label">
-        توضیحات محصول
+        {label}
       </Typography>
       <Box
         className="rich-editor-toolbar"
@@ -476,10 +485,11 @@ export function RichDescriptionEditor({
       <Box className="rich-editor-footer">
         <span>از نوار ابزار برای قالب‌بندی متن استفاده کنید.</span>
         <span>
-          حجم متن و قالب: {value.length.toLocaleString("fa-IR")} / ۱۰٬۰۰۰
+          حجم متن و قالب: {value.length.toLocaleString("fa-IR")} /{" "}
+          {maxLength.toLocaleString("fa-IR")}
         </span>
       </Box>
-      {value.length > 10000 && (
+      {value.length > maxLength && (
         <Typography color="error" role="alert" variant="body2">
           حجم توضیحات بیش از حد مجاز است؛ بخشی از متن یا قالب‌بندی را کم کنید.
         </Typography>
