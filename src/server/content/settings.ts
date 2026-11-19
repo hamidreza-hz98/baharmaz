@@ -9,6 +9,7 @@ import {
   type StaticSeoSettings,
 } from "../../shared/content.ts";
 import { getMedia } from "../media/storage.ts";
+import { sanitizeRichDescription } from "../products/rich-description.ts";
 import {
   CatalogWriteBusy,
   withCatalogReferenceLock,
@@ -193,7 +194,7 @@ function sections(value: unknown, strict: boolean): ContentSettings {
     terms: article(root.terms),
     about: {
       title: text(a.title, 160, strict),
-      body: text(a.body, 20000, strict),
+      body: sanitizeRichDescription(text(a.body, 20000, strict)),
       imageId: image(a.imageId, strict),
     },
     seo: Object.fromEntries(
@@ -239,7 +240,8 @@ export function validateContentSection(
   section: ContentSection,
   value: unknown,
 ): SiteContentSettings[ContentSection] {
-  if (!contentSections.includes(section)) throw new RangeError("Invalid section");
+  if (!contentSections.includes(section))
+    throw new RangeError("Invalid section");
   const base = publicContent({});
   const result = sections(
     { ...base, [section]: value === undefined ? base[section] : value },
@@ -250,12 +252,15 @@ export function validateContentSection(
 
 export function validateStaticSeo(value: unknown): StaticSeoSettings {
   const base = publicContent({});
-  return sections({ ...base, seo: value === undefined ? base.seo : value }, true)
-    .seo;
+  return sections(
+    { ...base, seo: value === undefined ? base.seo : value },
+    true,
+  ).seo;
 }
 
 export async function readContentSection(section: ContentSection) {
-  if (!contentSections.includes(section)) throw new RangeError("Invalid section");
+  if (!contentSections.includes(section))
+    throw new RangeError("Invalid section");
   const [record, legacy] = await Promise.all([
     ContentDocument.findById(sectionDocumentId(section)).lean(),
     ContentDocument.findById("site").lean(),
@@ -280,7 +285,9 @@ export async function readStaticSeo() {
   const legacyValue = valueAt(legacy?.data, "seo");
   return {
     revision: revisionOf(record),
-    seo: validateStaticSeo(storedValue === undefined ? legacyValue : storedValue),
+    seo: validateStaticSeo(
+      storedValue === undefined ? legacyValue : storedValue,
+    ),
   };
 }
 
@@ -387,6 +394,10 @@ export async function saveContentSection(
 
 export async function saveStaticSeo(value: unknown, revision: unknown) {
   const validated = validateStaticSeo(value);
-  const result = await writeSettingsDocument(seoDocumentId, validated, revision);
+  const result = await writeSettingsDocument(
+    seoDocumentId,
+    validated,
+    revision,
+  );
   return { revision: result.revision, seo: validated };
 }
