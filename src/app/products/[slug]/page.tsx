@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { productBySlug } from "@/server/public-catalog/catalog";
 import { StorefrontShell } from "@/storefront/storefront-shell";
 import { Gallery } from "@/storefront/catalog/gallery";
+import { CatalogImage } from "@/storefront/catalog/catalog-image";
 import { Price } from "@/storefront/catalog/product-card";
 import { AddToCart } from "@/storefront/catalog/add-to-cart";
 import { absolutePublicUrl } from "@/server/config/public-origin";
@@ -22,10 +23,9 @@ export async function generateMetadata({ params }: Props) {
   return p
     ? {
         title: `${p.title} | بهارمز`,
-        description: (p.excerpt || `مشاهده ${p.title} در فروشگاه بهارمز.`).slice(
-          0,
-          160,
-        ),
+        description: (
+          p.excerpt || `مشاهده ${p.title} در فروشگاه بهارمز.`
+        ).slice(0, 160),
         ...(canonical
           ? { alternates: { canonical } }
           : { robots: { index: false, follow: false } }),
@@ -98,9 +98,14 @@ export default async function ProductPage({ params }: Props) {
         <section>
           <h2>مواد اولیه</h2>
           {p.ingredients.length ? (
-            <ul>
-              {p.ingredients.map((name) => (
-                <li key={name}>{name}</li>
+            <ul className="product-ingredients">
+              {p.ingredients.map((ingredient) => (
+                <li key={ingredient.name}>
+                  {ingredient.iconId && (
+                    <CatalogImage id={ingredient.iconId} alt="" />
+                  )}
+                  <span>{ingredient.name}</span>
+                </li>
               ))}
             </ul>
           ) : (
