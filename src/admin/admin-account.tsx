@@ -1,9 +1,23 @@
 "use client";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import DevicesOutlinedIcon from "@mui/icons-material/DevicesOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Box, Button, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  InputAdornment,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { formatTehranJalali } from "@/shared/locale";
 type AdminProfile = { name: string; username: string; mobile: string };
 type AdminSession = {
@@ -109,88 +123,147 @@ export function AdminAccount() {
     );
   if (!profile) return <Typography role="status">در حال بارگذاری…</Typography>;
   return (
-    <>
-      <Typography component="h1" variant="h5">
-        حساب مدیر
-      </Typography>
+    <div className="admin-account-page">
+      <div className="admin-account-heading">
+        <span>
+          <AccountCircleOutlinedIcon aria-hidden="true" />
+        </span>
+        <div>
+          <Typography component="h1" variant="h5">
+            حساب مدیر
+          </Typography>
+          <p>مدیریت اطلاعات حساب و نشست‌های فعال</p>
+        </div>
+      </div>
       {message && (
         <Alert role="status" severity="info">
           {message}
         </Alert>
       )}
-      <Box
-        component="form"
-        onSubmit={save}
-        sx={{ display: "grid", gap: 2, maxWidth: 540, my: 2 }}
-      >
-        <TextField
-          label="نام و نام خانوادگی"
-          value={profile.name}
-          onChange={(event) =>
-            setProfile({ ...profile, name: event.target.value })
-          }
-          required
-        />
-        <TextField
-          label="نام کاربری"
-          value={profile.username}
-          onChange={(event) =>
-            setProfile({ ...profile, username: event.target.value })
-          }
-          required
-        />
-        <TextField
-          label="شماره همراه"
-          value={profile.mobile}
-          onChange={(event) =>
-            setProfile({ ...profile, mobile: event.target.value })
-          }
-        />
-        <Box>
-          <Button
-            type="submit"
-            variant="contained"
-            size="small"
-            startIcon={<SaveOutlinedIcon />}
-            disabled={busy}
-          >
-            ذخیره تغییرات
-          </Button>
-        </Box>
-      </Box>
-      <Typography component="h2" variant="h6">
-        نشست‌های فعال
-      </Typography>
-      {sessions.length === 0 ? (
-        <Typography>نشست فعالی وجود ندارد.</Typography>
-      ) : (
-        sessions.map((item) => (
-          <Box
-            key={item.id}
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              flexWrap: "wrap",
-              py: 1,
+      <section className="admin-account-card">
+        <div className="admin-account-section-heading">
+          <span>
+            <PersonOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h2>اطلاعات حساب</h2>
+            <p>مشخصات مدیر فروشگاه را بررسی و ویرایش کنید.</p>
+          </div>
+        </div>
+        <Box component="form" onSubmit={save} className="admin-account-form">
+          <TextField
+            label="نام و نام خانوادگی"
+            value={profile.name}
+            onChange={(event) =>
+              setProfile({ ...profile, name: event.target.value })
+            }
+            required
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
             }}
-          >
-            <Typography>
-              {item.current ? "نشست فعلی" : "نشست دیگر"} — ایجاد:{" "}
-              {formatTehranJalali(item.createdAt)} — انقضا:{" "}
-              {formatTehranJalali(item.expiresAt)}
-            </Typography>
+          />
+          <TextField
+            label="نام کاربری"
+            value={profile.username}
+            onChange={(event) =>
+              setProfile({ ...profile, username: event.target.value })
+            }
+            required
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BadgeOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            label="شماره همراه"
+            value={profile.mobile}
+            onChange={(event) =>
+              setProfile({ ...profile, mobile: event.target.value })
+            }
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: { inputMode: "tel" },
+            }}
+          />
+          <Box>
             <Button
+              type="submit"
+              variant="contained"
               size="small"
-              startIcon={<LogoutOutlinedIcon />}
-              onClick={() => revoke(item.id)}
+              startIcon={<SaveOutlinedIcon />}
               disabled={busy}
             >
-              {item.current ? "خروج از این نشست" : "پایان نشست"}
+              ذخیره تغییرات
             </Button>
           </Box>
-        ))
-      )}
-    </>
+        </Box>
+      </section>
+      <section className="admin-account-card">
+        <div className="admin-account-section-heading">
+          <span>
+            <DevicesOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h2>نشست‌های فعال</h2>
+            <p>نشست‌های حساب مدیر را مشاهده و مدیریت کنید.</p>
+          </div>
+        </div>
+        {sessions.length === 0 ? (
+          <Typography className="admin-session-empty">
+            نشست فعالی وجود ندارد.
+          </Typography>
+        ) : (
+          sessions.map((item) => (
+            <Box key={item.id} className="admin-session-card">
+              <div className="admin-session-details">
+                <div className="admin-session-title">
+                  <DevicesOutlinedIcon aria-hidden="true" />
+                  <strong>{item.current ? "نشست فعلی" : "نشست دیگر"}</strong>
+                  {item.current && <span>فعال</span>}
+                </div>
+                <div className="admin-session-dates">
+                  <span>
+                    <EventOutlinedIcon aria-hidden="true" /> ایجاد:{" "}
+                    {formatTehranJalali(item.createdAt)}
+                  </span>
+                  <span>
+                    <ScheduleOutlinedIcon aria-hidden="true" /> انقضا:{" "}
+                    {formatTehranJalali(item.expiresAt)}
+                  </span>
+                </div>
+              </div>
+              <Button
+                className="admin-session-end"
+                variant="outlined"
+                color="error"
+                size="small"
+                startIcon={<LogoutOutlinedIcon />}
+                onClick={() => revoke(item.id)}
+                disabled={busy}
+              >
+                {item.current ? "خروج از این نشست" : "پایان نشست"}
+              </Button>
+            </Box>
+          ))
+        )}
+      </section>
+    </div>
   );
 }
