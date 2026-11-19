@@ -2,6 +2,12 @@
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import SortOutlinedIcon from "@mui/icons-material/SortOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import SpaOutlinedIcon from "@mui/icons-material/SpaOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import SubdirectoryArrowLeftIcon from "@mui/icons-material/SubdirectoryArrowLeft";
+import FilterAltOffOutlinedIcon from "@mui/icons-material/FilterAltOffOutlined";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
@@ -12,6 +18,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   MenuItem,
   TextField,
   Typography,
@@ -235,21 +242,28 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
     else if (picker === "icon") setIcon(item.id);
   }
   return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 2,
-          flexWrap: "wrap",
-          mb: 2,
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          {title}
-        </Typography>
-        <Box>
+    <Box className={`catalog-admin-page${category ? "" : " is-ingredients"}`}>
+      <Box className="catalog-admin-heading">
+        <div className="catalog-admin-title">
+          <span className="catalog-admin-heading-icon">
+            {category ? (
+              <CategoryOutlinedIcon aria-hidden="true" />
+            ) : (
+              <SpaOutlinedIcon aria-hidden="true" />
+            )}
+          </span>
+          <div>
+            <Typography component="h1" variant="h5">
+              {title}
+            </Typography>
+            <p>
+              {category
+                ? "مدیریت دسته‌بندی‌ها و زیردسته‌های فروشگاه"
+                : "مدیریت مواد اولیه محصولات فروشگاه"}
+            </p>
+          </div>
+        </div>
+        <Box className="catalog-admin-heading-actions">
           <Button
             onClick={() => openEditor(null)}
             variant="contained"
@@ -261,6 +275,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
           {category && (
             <Button
               onClick={openOrder}
+              variant="outlined"
               size="small"
               startIcon={<SortOutlinedIcon />}
             >
@@ -269,158 +284,182 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
           )}
         </Box>
       </Box>
-      <Box
-        component="form"
-        className="catalog-search-controls"
-        onSubmit={(event) => {
-          event.preventDefault();
-          changeSearch(draft, 1);
-        }}
-        sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
-      >
-        <TextField
-          size="small"
-          label={`جست‌وجوی ${singular}`}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          slotProps={{ htmlInput: { maxLength: 80 } }}
-          sx={{ maxWidth: 360 }}
-        />
-        <Button
-          type="submit"
-          variant="outlined"
-          size="small"
-          startIcon={<SearchOutlinedIcon />}
-        >
-          جست‌وجو
-        </Button>
-        <Button
-          onClick={() => {
-            setDraft("");
-            changeSearch("", 1);
+      <div className="catalog-admin-panel">
+        <div className="catalog-admin-panel-heading">
+          <span className="catalog-admin-panel-icon">
+            {category ? (
+              <CategoryOutlinedIcon aria-hidden="true" />
+            ) : (
+              <SpaOutlinedIcon aria-hidden="true" />
+            )}
+          </span>
+          <div>
+            <h2>فهرست {title}</h2>
+            <p>
+              {category
+                ? "دسته‌های اصلی و زیردسته‌های آن‌ها"
+                : "موارد ثبت‌شده برای محصولات"}
+            </p>
+          </div>
+        </div>
+        <Box
+          component="form"
+          className="catalog-search-controls"
+          onSubmit={(event) => {
+            event.preventDefault();
+            changeSearch(draft, 1);
           }}
-          size="small"
+          sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
         >
-          پاک‌کردن
-        </Button>
-      </Box>
-      {error && (
-        <Alert
-          severity="error"
-          action={<Button onClick={reload}>تلاش دوباره</Button>}
-        >
-          {error}
-        </Alert>
-      )}
-      {loading ? (
-        <Typography role="status">در حال دریافت اطلاعات…</Typography>
-      ) : !result?.items.length ? (
-        <Typography>
-          {query ? "نتیجه‌ای پیدا نشد." : `هنوز ${singular} ثبت نشده است.`}
-        </Typography>
-      ) : (
-        <>
-          <Box component="ul" sx={{ listStyle: "none", p: 0 }}>
-            {result.items.map((item) => (
-              <Box
-                component="li"
-                key={item.id}
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  py: 1,
-                  ...(item.parentId && {
-                    marginInlineStart: { xs: 3, sm: 7, md: 10 },
-                    paddingInline: { xs: 1, sm: 2 },
-                    my: 0.75,
-                    border: "1px solid",
-                    borderInlineStart: "4px solid",
-                    borderColor: "primary.main",
-                    borderRadius: 1.5,
-                    bgcolor: "action.hover",
-                  }),
-                }}
-              >
-                <AdminThumbnail
-                  id={item.imageId ?? item.iconId}
-                  name={item.name}
-                />
-                <Box sx={{ flex: 1, minWidth: 140 }}>
-                  {item.parentId && (
-                    <Typography
-                      component="span"
-                      variant="caption"
-                      sx={{
-                        display: "inline-block",
-                        color: "primary.main",
-                        fontWeight: 700,
-                        marginInlineEnd: 1,
-                      }}
-                    >
-                      زیردسته
-                    </Typography>
-                  )}
-                  <Typography component="strong">{item.name}</Typography>
-                  {item.parentName && (
-                    <Typography variant="body2">
-                      دسته اصلی: {item.parentName}
-                    </Typography>
-                  )}
-                  {item.slug && (
-                    <Typography variant="body2">
-                      نامک: <bdi dir="auto">{item.slug}</bdi>
-                    </Typography>
-                  )}
-                  {item.excerpt && (
-                    <Typography variant="body2">{item.excerpt}</Typography>
-                  )}
-                </Box>
-                {category && !item.parentId && (
-                  <Button
-                    aria-label={`افزودن زیردسته به ${item.name}`}
-                    onClick={() => openEditor(null, item.id)}
+          <TextField
+            size="small"
+            label={`جست‌وجوی ${singular}`}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            slotProps={{
+              htmlInput: { maxLength: 80 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ maxWidth: 360 }}
+          />
+          <Button
+            type="submit"
+            variant="outlined"
+            size="small"
+            startIcon={<SearchOutlinedIcon />}
+          >
+            جست‌وجو
+          </Button>
+          <Button
+            onClick={() => {
+              setDraft("");
+              changeSearch("", 1);
+            }}
+            size="small"
+            startIcon={<FilterAltOffOutlinedIcon />}
+          >
+            پاک‌کردن
+          </Button>
+        </Box>
+        {error && (
+          <Alert
+            severity="error"
+            action={<Button onClick={reload}>تلاش دوباره</Button>}
+          >
+            {error}
+          </Alert>
+        )}
+        {loading ? (
+          <Typography role="status">در حال دریافت اطلاعات…</Typography>
+        ) : !result?.items.length ? (
+          <Typography className="catalog-admin-empty">
+            {query ? "نتیجه‌ای پیدا نشد." : `هنوز ${singular} ثبت نشده است.`}
+          </Typography>
+        ) : (
+          <>
+            <p className="catalog-admin-count" role="status">
+              {new Intl.NumberFormat("fa-IR").format(result.total)}{" "}
+              {category ? "دسته‌بندی" : "ماده اولیه"} پیدا شد.
+            </p>
+            <Box
+              component="ul"
+              className="catalog-admin-list"
+              sx={{ listStyle: "none", p: 0 }}
+            >
+              {result.items.map((item) => (
+                <Box
+                  component="li"
+                  key={item.id}
+                  className={`catalog-admin-item${item.parentId ? " is-child" : ""}`}
+                >
+                  <AdminThumbnail
+                    id={category ? (item.imageId ?? item.iconId) : item.iconId}
+                    name={item.name}
+                    size={56}
+                  />
+                  <Box
+                    className="catalog-admin-item-info"
+                    sx={{ flex: 1, minWidth: 140 }}
                   >
-                    افزودن زیردسته
+                    {item.parentId && (
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        className="catalog-child-badge"
+                      >
+                        زیردسته
+                      </Typography>
+                    )}
+                    <Typography component="strong">{item.name}</Typography>
+                    {item.parentName && (
+                      <Typography variant="body2">
+                        دسته اصلی: {item.parentName}
+                      </Typography>
+                    )}
+                    {item.slug && (
+                      <Typography variant="body2">
+                        نامک: <bdi dir="auto">{item.slug}</bdi>
+                      </Typography>
+                    )}
+                    {item.excerpt && (
+                      <Typography variant="body2">{item.excerpt}</Typography>
+                    )}
+                  </Box>
+                  {category && !item.parentId && (
+                    <Button
+                      size="small"
+                      startIcon={<SubdirectoryArrowLeftIcon />}
+                      aria-label={`افزودن زیردسته به ${item.name}`}
+                      onClick={() => openEditor(null, item.id)}
+                    >
+                      افزودن زیردسته
+                    </Button>
+                  )}
+                  <Button
+                    size="small"
+                    startIcon={<EditOutlinedIcon />}
+                    aria-label={`ویرایش ${item.name}`}
+                    onClick={() => openEditor(item)}
+                  >
+                    ویرایش
                   </Button>
-                )}
-                <Button
-                  aria-label={`ویرایش ${item.name}`}
-                  onClick={() => openEditor(item)}
-                >
-                  ویرایش
-                </Button>
-                <Button
-                  aria-label={`بایگانی ${item.name}`}
-                  onClick={() => setArchive(item)}
-                >
-                  بایگانی
-                </Button>
-              </Box>
-            ))}
-          </Box>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Button
-              disabled={page <= 1}
-              onClick={() => changeSearch(query, page - 1)}
-            >
-              صفحه قبل
-            </Button>
-            <Typography>
-              صفحه {new Intl.NumberFormat("fa-IR").format(page)}
-            </Typography>
-            <Button
-              disabled={page * result.limit >= result.total}
-              onClick={() => changeSearch(query, page + 1)}
-            >
-              صفحه بعد
-            </Button>
-          </Box>
-        </>
-      )}
+                  <Button
+                    size="small"
+                    startIcon={<ArchiveOutlinedIcon />}
+                    aria-label={`بایگانی ${item.name}`}
+                    onClick={() => setArchive(item)}
+                  >
+                    بایگانی
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Button
+                disabled={page <= 1}
+                onClick={() => changeSearch(query, page - 1)}
+              >
+                صفحه قبل
+              </Button>
+              <Typography>
+                صفحه {new Intl.NumberFormat("fa-IR").format(page)}
+              </Typography>
+              <Button
+                disabled={page * result.limit >= result.total}
+                onClick={() => changeSearch(query, page + 1)}
+              >
+                صفحه بعد
+              </Button>
+            </Box>
+          </>
+        )}
+      </div>
       <Dialog
         open={editor}
         onClose={() => {
