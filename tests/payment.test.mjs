@@ -13,6 +13,19 @@ const env = {
 test("provider configuration and integer currency fail closed", () => {
   assert.throws(() => parsePaymentConfig({}));
   assert.throws(() => parsePaymentConfig({ ...env, AQAYE_MODE: "live" }));
+  const local = {
+    ...env,
+    NODE_ENV: "development",
+    AQAYE_CALLBACK_URL: "http://localhost:3000/api/payments/aqaye/callback",
+  };
+  assert.equal(parsePaymentConfig(local).callback, local.AQAYE_CALLBACK_URL);
+  assert.throws(() => parsePaymentConfig({ ...local, NODE_ENV: "production" }));
+  assert.throws(() =>
+    parsePaymentConfig({
+      ...local,
+      AQAYE_CALLBACK_URL: "http://shop.example/callback",
+    }),
+  );
   assert.throws(() =>
     parsePaymentConfig({
       ...env,
@@ -44,6 +57,7 @@ test("mock provider creates and verifies using server amounts", async () => {
   });
   assert.equal(created.amountTomans, 10000);
   assert.equal(calls[0].body.amount, 10000);
+  assert.equal(calls[0].body.callback_method, "GET");
   assert.match(created.redirectUrl, /sandbox\/test-reference$/);
   assert.equal(
     await adapter.verify({ amountRials: 100000, transid: created.transid }),
