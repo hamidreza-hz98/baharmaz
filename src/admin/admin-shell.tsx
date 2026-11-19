@@ -38,6 +38,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/storefront/brand-logo";
 
 const icons: Record<string, typeof DashboardOutlinedIcon> = {
   "/admin": DashboardOutlinedIcon,
@@ -101,8 +102,7 @@ export function AdminShell({
         );
         const selected =
           currentPath === link.href ||
-          (link.href !== "/admin" &&
-            currentPath.startsWith(`${link.href}/`));
+          (link.href !== "/admin" && currentPath.startsWith(`${link.href}/`));
         return (
           <div
             key={link.href}
@@ -132,7 +132,14 @@ export function AdminShell({
       </a>
       <aside className="admin-sidebar">
         <div className="admin-sidebar-heading">
-          <strong>{collapsed ? "ب" : "مدیریت بهارمز"}</strong>
+          <Link
+            href="/admin"
+            className="admin-brand"
+            aria-label="مدیریت بهارمز، پیشخوان"
+          >
+            <BrandLogo size={30} />
+            {!collapsed && <strong>مدیریت بهارمز</strong>}
+          </Link>
           <IconButton
             size="small"
             aria-expanded={!collapsed}
@@ -159,7 +166,14 @@ export function AdminShell({
               <MenuIcon aria-hidden="true" />
             </IconButton>
           </Box>
-          <strong>مدیریت بهارمز</strong>
+          <Link
+            href="/admin"
+            className="admin-brand"
+            aria-label="مدیریت بهارمز، پیشخوان"
+          >
+            <BrandLogo size={30} />
+            <strong>مدیریت بهارمز</strong>
+          </Link>
           <Box className="admin-profile-menu">
             <Button
               id="admin-profile-trigger"
@@ -253,7 +267,7 @@ export function AdminShell({
         </main>
       </div>
       <Drawer
-        anchor="right"
+        anchor="left"
         open={open}
         onClose={() => setOpen(false)}
         slotProps={{
@@ -271,7 +285,15 @@ export function AdminShell({
             justifyContent: "space-between",
           }}
         >
-          <strong>مدیریت بهارمز</strong>
+          <Link
+            href="/admin"
+            className="admin-brand"
+            aria-label="مدیریت بهارمز، پیشخوان"
+            onClick={() => setOpen(false)}
+          >
+            <BrandLogo size={30} />
+            <strong>مدیریت بهارمز</strong>
+          </Link>
           <IconButton
             sx={{ minWidth: 44, minHeight: 44 }}
             aria-label="بستن منوی مدیریت"
