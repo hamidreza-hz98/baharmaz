@@ -1,4 +1,8 @@
-export function CheckoutSteps({ current }: { current: "cart" | "address" }) {
+export function CheckoutSteps({
+  current,
+}: {
+  current: "cart" | "address" | "review";
+}) {
   return (
     <nav aria-label="مراحل خرید">
       <ol className="checkout-steps">
@@ -8,7 +12,7 @@ export function CheckoutSteps({ current }: { current: "cart" | "address" }) {
         <li aria-current={current === "address" ? "step" : undefined}>
           <span>۲</span>نشانی و زمان
         </li>
-        <li>
+        <li aria-current={current === "review" ? "step" : undefined}>
           <span>۳</span>تأیید نهایی
         </li>
       </ol>
