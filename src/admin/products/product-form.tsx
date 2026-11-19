@@ -1,5 +1,16 @@
 "use client";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -29,6 +40,25 @@ type Choice = {
   imageId?: string | null;
   iconId?: string | null;
 };
+function FormSectionTitle({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="product-form-section-title">
+      <span aria-hidden="true">{icon}</span>
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
 function amount(value: string): number {
   try {
     return tomansToRials(parseLocalizedInteger(value));
@@ -71,7 +101,9 @@ export function ProductForm({ productId }: { productId?: string }) {
         setTitle(item.title);
         setExcerpt(item.excerpt);
         setDescription(item.description);
-        setPrice(formatPersianGroupedInput(String(rialsToTomans(item.priceRials))));
+        setPrice(
+          formatPersianGroupedInput(String(rialsToTomans(item.priceRials))),
+        );
         setDiscount(
           item.discountPriceRials === null
             ? ""
@@ -206,170 +238,237 @@ export function ProductForm({ productId }: { productId?: string }) {
     <Box
       component="form"
       onSubmit={submit}
+      className="admin-product-form"
       sx={{ display: "grid", gap: 2, width: "100%" }}
     >
-      <Typography component="h1" variant="h5">
-        {productId ? "ویرایش محصول" : "افزودن محصول"}
-      </Typography>
+      <div className="product-form-heading">
+        <div className="product-form-heading-title">
+          <span className="product-form-heading-icon">
+            <Inventory2OutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <Typography component="h1" variant="h5">
+              {productId ? "ویرایش محصول" : "افزودن محصول"}
+            </Typography>
+            <p>اطلاعات محصول را برای نمایش در فروشگاه تکمیل کنید.</p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outlined"
+          startIcon={<ArrowForwardIcon />}
+          onClick={leave}
+          disabled={busy}
+        >
+          بازگشت به محصولات
+        </Button>
+      </div>
       {error && (
         <Alert severity="error" role="alert">
           {error}
         </Alert>
       )}
-      <TextField
-        label="نام محصول"
-        value={title}
-        onChange={(event) => change(setTitle, event.target.value)}
-        required
-        slotProps={{ htmlInput: { maxLength: 120 } }}
-      />
-      <TextField
-        label="توضیح کوتاه"
-        value={excerpt}
-        onChange={(event) => change(setExcerpt, event.target.value)}
-        multiline
-        slotProps={{ htmlInput: { maxLength: 300 } }}
-      />
-      <RichDescriptionEditor
-        value={description}
-        onChange={(value) => change(setDescription, value)}
-      />
-      <Box
-        component="fieldset"
-        sx={{
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
-          minWidth: 0,
-        }}
-      >
-        <Typography component="legend">گالری تصاویر</Typography>
-        <Button
-          type="button"
-          disabled={gallery.length >= 10}
-          onClick={() => setPicker(true)}
+      <section className="product-form-card product-form-basic">
+        <FormSectionTitle
+          icon={<DescriptionOutlinedIcon />}
+          title="اطلاعات محصول"
+          description="نام و توضیحات محصول را وارد کنید."
+        />
+        <TextField
+          label="نام محصول"
+          value={title}
+          onChange={(event) => change(setTitle, event.target.value)}
+          required
+          slotProps={{ htmlInput: { maxLength: 120 } }}
+        />
+        <TextField
+          label="توضیح کوتاه"
+          value={excerpt}
+          onChange={(event) => change(setExcerpt, event.target.value)}
+          multiline
+          slotProps={{ htmlInput: { maxLength: 300 } }}
+        />
+        <RichDescriptionEditor
+          value={description}
+          onChange={(value) => change(setDescription, value)}
+        />
+      </section>
+      <section className="product-form-card">
+        <FormSectionTitle
+          icon={<CollectionsOutlinedIcon />}
+          title="تصاویر محصول"
+          description="تصویر اول به عنوان تصویر اصلی نمایش داده می‌شود."
+        />
+        <Box
+          component="fieldset"
+          className="product-form-gallery"
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            minWidth: 0,
+          }}
         >
-          افزودن تصویر
-        </Button>
-        <Typography variant="body2">
-          حداکثر ۱۰ تصویر؛ تصویر اول تصویر اصلی است.
-        </Typography>
-        <Box component="ol" sx={{ p: 0, listStyle: "none" }}>
-          {gallery.map((id, index) => (
-            <Box
-              component="li"
-              key={id}
-              sx={{
-                display: "flex",
-                gap: 1,
-                alignItems: "center",
-                flexWrap: "wrap",
-                my: 1,
-              }}
-            >
-              <Image
-                unoptimized
-                src={`/api/admin/media/${id}`}
-                width={64}
-                height={64}
-                alt={`تصویر ${index + 1}`}
-                style={{ objectFit: "contain" }}
-              />
-              <Typography>
-                تصویر {new Intl.NumberFormat("fa-IR").format(index + 1)}
-              </Typography>
-              <Button
-                type="button"
-                aria-label={`انتقال تصویر ${index + 1} به بالا`}
-                disabled={index === 0}
-                onClick={() => {
-                  const next = [...gallery];
-                  [next[index - 1], next[index]] = [
-                    next[index],
-                    next[index - 1],
-                  ];
-                  change(setGallery, next);
+          <Typography component="legend">گالری تصاویر</Typography>
+          <Button
+            type="button"
+            disabled={gallery.length >= 10}
+            onClick={() => setPicker(true)}
+            variant="outlined"
+            startIcon={<AddPhotoAlternateOutlinedIcon />}
+          >
+            افزودن تصویر
+          </Button>
+          <Typography variant="body2">
+            حداکثر ۱۰ تصویر؛ تصویر اول تصویر اصلی است.
+          </Typography>
+          <Box component="ol" sx={{ p: 0, listStyle: "none" }}>
+            {gallery.map((id, index) => (
+              <Box
+                component="li"
+                key={id}
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  my: 1,
                 }}
+                className="product-gallery-item"
               >
-                بالا
-              </Button>
-              <Button
-                type="button"
-                aria-label={`انتقال تصویر ${index + 1} به پایین`}
-                disabled={index === gallery.length - 1}
-                onClick={() => {
-                  const next = [...gallery];
-                  [next[index + 1], next[index]] = [
-                    next[index],
-                    next[index + 1],
-                  ];
-                  change(setGallery, next);
-                }}
-              >
-                پایین
-              </Button>
-              <Button
-                type="button"
-                aria-label={`حذف تصویر ${index + 1}`}
-                onClick={() =>
-                  change(
-                    setGallery,
-                    gallery.filter((entry) => entry !== id),
-                  )
-                }
-              >
-                حذف
-              </Button>
-            </Box>
-          ))}
+                <Image
+                  unoptimized
+                  src={`/api/admin/media/${id}`}
+                  width={64}
+                  height={64}
+                  alt={`تصویر ${index + 1}`}
+                  style={{ objectFit: "contain" }}
+                />
+                <Typography>
+                  تصویر {new Intl.NumberFormat("fa-IR").format(index + 1)}
+                </Typography>
+                <Button
+                  type="button"
+                  startIcon={<ArrowUpwardIcon />}
+                  aria-label={`انتقال تصویر ${index + 1} به بالا`}
+                  disabled={index === 0}
+                  onClick={() => {
+                    const next = [...gallery];
+                    [next[index - 1], next[index]] = [
+                      next[index],
+                      next[index - 1],
+                    ];
+                    change(setGallery, next);
+                  }}
+                >
+                  بالا
+                </Button>
+                <Button
+                  type="button"
+                  startIcon={<ArrowDownwardIcon />}
+                  aria-label={`انتقال تصویر ${index + 1} به پایین`}
+                  disabled={index === gallery.length - 1}
+                  onClick={() => {
+                    const next = [...gallery];
+                    [next[index + 1], next[index]] = [
+                      next[index],
+                      next[index + 1],
+                    ];
+                    change(setGallery, next);
+                  }}
+                >
+                  پایین
+                </Button>
+                <Button
+                  type="button"
+                  startIcon={<DeleteOutlineOutlinedIcon />}
+                  aria-label={`حذف تصویر ${index + 1}`}
+                  onClick={() =>
+                    change(
+                      setGallery,
+                      gallery.filter((entry) => entry !== id),
+                    )
+                  }
+                >
+                  حذف
+                </Button>
+              </Box>
+            ))}
+          </Box>
         </Box>
-      </Box>
-      <CatalogSelector
-        kind="categories"
-        selected={category}
-        onChange={(value) => change(setCategory, value)}
-      />
-      <CatalogSelector
-        kind="ingredients"
-        selected={ingredients}
-        onChange={(value) => change(setIngredients, value)}
-      />
-      <PriceField
-        label="قیمت اصلی (تومان)"
-        value={price}
-        onValueChange={(value) => change(setPrice, value)}
-        required
-      />
-      <PriceField
-        label="قیمت پس از تخفیف (تومان)"
-        value={discount}
-        onValueChange={(value) => change(setDiscount, value)}
-        helperText="اختیاری؛ باید کمتر از قیمت اصلی باشد."
-      />
-      <Box>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={available}
-              onChange={(event) => change(setAvailable, event.target.checked)}
-            />
-          }
-          label="موجود و قابل سفارش"
+      </section>
+      <section className="product-form-card">
+        <FormSectionTitle
+          icon={<CategoryOutlinedIcon />}
+          title="دسته‌بندی و مواد اولیه"
+          description="دسته‌بندی و مواد اولیه مرتبط با محصول را انتخاب کنید."
         />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={promoted}
-              onChange={(event) => change(setPromoted, event.target.checked)}
-            />
-          }
-          label="محصول پیشنهادی"
+        <div className="product-form-selectors">
+          <CatalogSelector
+            kind="categories"
+            selected={category}
+            onChange={(value) => change(setCategory, value)}
+          />
+          <CatalogSelector
+            kind="ingredients"
+            selected={ingredients}
+            onChange={(value) => change(setIngredients, value)}
+          />
+        </div>
+      </section>
+      <section className="product-form-card">
+        <FormSectionTitle
+          icon={<SellOutlinedIcon />}
+          title="قیمت‌گذاری"
+          description="قیمت‌ها را به تومان وارد کنید."
         />
-      </Box>
-      <Typography variant="body2" color="text.secondary">
-        نامک و اطلاعات جست‌وجو به‌صورت خودکار ساخته می‌شوند.
-      </Typography>
+        <div className="product-form-prices">
+          <PriceField
+            label="قیمت اصلی (تومان)"
+            value={price}
+            onValueChange={(value) => change(setPrice, value)}
+            required
+          />
+          <PriceField
+            label="قیمت پس از تخفیف (تومان)"
+            value={discount}
+            onValueChange={(value) => change(setDiscount, value)}
+            helperText="اختیاری؛ باید کمتر از قیمت اصلی باشد."
+          />
+        </div>
+      </section>
+      <section className="product-form-card">
+        <FormSectionTitle
+          icon={<TuneOutlinedIcon />}
+          title="وضعیت نمایش و فروش"
+          description="موجودی و پیشنهاد ویژه را مشخص کنید."
+        />
+        <Box className="product-form-options">
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={available}
+                onChange={(event) => change(setAvailable, event.target.checked)}
+              />
+            }
+            label="موجود و قابل سفارش"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={promoted}
+                onChange={(event) => change(setPromoted, event.target.checked)}
+              />
+            }
+            label="محصول پیشنهادی"
+          />
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          نامک و اطلاعات جست‌وجو به‌صورت خودکار ساخته می‌شوند.
+        </Typography>
+      </section>
       <Box
+        className="product-form-actions"
         sx={{
           display: "flex",
           alignItems: "center",
