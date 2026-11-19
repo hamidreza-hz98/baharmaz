@@ -15,6 +15,8 @@ test("customer management displays totals and handles create, edit and errors", 
           {
             id: "1",
             name: "مشتری نمونه",
+            firstName: "مشتری",
+            lastName: "نمونه",
             mobile: "09120000000",
             mobileVerified: false,
             orderCount: 2,
@@ -44,9 +46,9 @@ test("customer management displays totals and handles create, edit and errors", 
   );
   await page.getByRole("button", { name: "انصراف" }).click();
   await page.getByRole("button", { name: "افزودن مشتری" }).click();
-  await page.getByRole("dialog").getByLabel("نام و نام خانوادگی").focus();
+  await page.getByRole("dialog").getByLabel("نام", { exact: true }).focus();
   await expect(
-    page.getByRole("dialog").getByLabel("نام و نام خانوادگی"),
+    page.getByRole("dialog").getByLabel("نام", { exact: true }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
