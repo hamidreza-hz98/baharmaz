@@ -42,7 +42,11 @@ test("address validates digits, optional coordinates and input bounds", () => {
   );
 });
 test("map configuration and mocked reverse provider fail safely", async () => {
-  assert.deepEqual(publicMapConfig({}), { enabled: false });
+  assert.deepEqual(publicMapConfig({}), {
+    enabled: true,
+    template: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: "© OpenStreetMap contributors",
+  });
   assert.throws(() =>
     publicMapConfig({
       MAP_TILE_URL: "http://example.com/{z}/{x}/{y}",
