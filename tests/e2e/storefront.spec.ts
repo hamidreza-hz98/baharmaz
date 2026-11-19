@@ -85,9 +85,13 @@ test("OTP registration dialog keeps the current checkout context", async ({
   await page.getByRole("button", { name: "ورود / ثبت‌نام" }).click();
   await page.getByLabel("شماره همراه").fill("۰۹۱۲۰۰۰۰۰۰۰");
   await page.getByRole("button", { name: "دریافت کد" }).click();
-  await page.getByLabel("کد چهار رقمی").fill("۱۲۳۴");
+  await page.getByLabel("رقم 1 کد تأیید").fill("۱");
+  await page.getByLabel("رقم 2 کد تأیید").fill("۲");
+  await page.getByLabel("رقم 3 کد تأیید").fill("۳");
+  await page.getByLabel("رقم 4 کد تأیید").fill("۴");
   await page.getByRole("button", { name: "تأیید", exact: true }).click();
-  await page.getByLabel("نام و نام خانوادگی").fill("کاربر نمونه");
+  await page.getByLabel("نام", { exact: true }).fill("کاربر");
+  await page.getByLabel("نام خانوادگی").fill("نمونه");
   await page
     .locator('input[autocomplete="new-password"]')
     .first()
