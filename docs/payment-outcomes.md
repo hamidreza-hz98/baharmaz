@@ -1,7 +1,5 @@
-# Payment outcome groundwork
+# Payment outcomes
 
-`src/modules/payment/outcome.ts` contains a pure transition contract: callbacks alone cannot establish success; an unconfirmed or already-verified provider response does not establish fresh success; verified state is not downgraded by replayed evidence. `src/storefront/payment/payment-outcome.tsx` provides Persian verified, failure and pending presentation with an optional validated support telephone and optional internal actions. It must only receive state from an authenticated, server-owned record. It is not exposed by a production route.
+Aqaye Pardakht sandbox checkout now persists separate test attempts and exposes authenticated result pages. Verified sandbox success, failure, and uncertain states are displayed explicitly as test outcomes. Successful test payments do not create fulfillment orders or real sales. See `aqaye-payment.md` for configuration, callback correlation, idempotency, and test instructions.
 
-This is not a payment lifecycle implementation. There is no persisted payment attempt or order, callback endpoint, reconciliation worker, owner-authorized result endpoint, fulfillment transition or retry action. Consequently duplicate callbacks, browser abandonment, verification failures, reconciliation, ownership and double-fulfillment cannot yet be integration-tested. Do not derive success from callback parameters or URL values. Complete tasks 22 and 23 and implement atomic persistent transitions and authorization before exposing these views. Task 24 remains open.
-
-Run `node --test tests/payment-outcome.test.mjs` for the isolated transition tests; these tests do not prove database idempotency or provider behavior.
+`src/modules/payment/outcome.ts` remains a pure transition contract for future non-sandbox payment work. A callback alone must not establish successful payment, and uncertain or already-verified responses require reconciliation. Live payment, real order creation, reconciliation, and fulfillment remain disabled.
