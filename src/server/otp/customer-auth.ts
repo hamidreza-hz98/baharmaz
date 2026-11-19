@@ -4,6 +4,7 @@ import mongoose, { Schema } from "mongoose";
 import { normalizeIranianMobile } from "../../shared/locale.ts";
 import { Customer, createSession, hashPassword } from "../identity/identity.ts";
 import { consumeOtp } from "./challenge.ts";
+import { validateCustomerName } from "../../shared/customer-name.ts";
 
 const ticketSchema = new Schema(
   {
@@ -56,19 +57,15 @@ export async function verifyCustomerOtp(
 /** Ticket is a short-lived bearer proof of successful OTP; atomically consume it once. */
 export async function registerVerifiedCustomer(
   token: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   password: string,
   confirmation: string,
 ) {
-  const normalizedName = name.trim();
-  if (
-    !/^[A-Za-z0-9_-]{43}$/.test(token) ||
-    normalizedName.length < 2 ||
-    normalizedName.length > 120 ||
-    password !== confirmation
-  )
+  const names = validateCustomerName(firstName, lastName);
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token) || password !== confirmation)
     throw new Error("Invalid registration details.");
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hashPassword(password, 8);
   const ticket = await RegistrationTicket.findOneAndDelete({
     _id: digest(token),
     expiresAt: { $gt: new Date() },
@@ -78,7 +75,7 @@ export async function registerVerifiedCustomer(
   const customer = await Customer.findOneAndUpdate(
     { mobile: ticket.mobile },
     {
-      $setOnInsert: { name: normalizedName, passwordHash },
+      $setOnInsert: { ...names, passwordHash },
       $set: { mobileVerified: true },
     },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
