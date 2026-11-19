@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "./brand-logo";
-import { CustomerAuthDialog } from "./auth/customer-auth-dialog";
+import { HeaderAccount } from "./auth/header-account";
 import { StoreNavigation } from "./store-navigation";
 
 export function StorefrontShell({ children }: { children: React.ReactNode }) {
@@ -16,7 +16,9 @@ export function StorefrontShell({ children }: { children: React.ReactNode }) {
             <span>بهارمز</span>
           </Link>
           <StoreNavigation />
-          <CustomerAuthDialog />
+          <div className="store-header-auth">
+            <HeaderAccount />
+          </div>
         </div>
       </header>
       {children}
