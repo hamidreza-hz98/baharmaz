@@ -3,14 +3,12 @@ import mongoose from "mongoose";
 import { Customer } from "@/server/identity/identity";
 import { Order } from "@/server/orders/orders";
 import { normalizeDigits, normalizeIranianMobile } from "@/shared/locale";
+import {
+  customerNameParts,
+  validateCustomerName,
+} from "@/shared/customer-name";
 
 export class CustomerConflict extends Error {}
-function nameValue(input: string) {
-  const name = input.trim();
-  if (name.length < 2 || name.length > 120)
-    throw new RangeError("Invalid name");
-  return name;
-}
 async function requireMobileIndex() {
   const indexes = await Customer.collection.indexes();
   if (
@@ -30,11 +28,15 @@ const duplicate = (error: unknown) =>
   error !== null &&
   "code" in error &&
   error.code === 11000;
-export async function createAdminCustomer(name: string, mobile: string) {
+export async function createAdminCustomer(
+  firstName: string,
+  lastName: string,
+  mobile: string,
+) {
   await requireMobileIndex();
   try {
     const customer = await Customer.create({
-      name: nameValue(name),
+      ...validateCustomerName(firstName, lastName),
       mobile: normalizeIranianMobile(mobile),
       mobileVerified: false,
       authVersion: 0,
@@ -47,20 +49,22 @@ export async function createAdminCustomer(name: string, mobile: string) {
 }
 export async function updateAdminCustomer(
   id: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   rawMobile: string,
   expectedMobile: string,
 ) {
   if (!/^[a-f\d]{24}$/i.test(id)) throw new RangeError("Invalid ID");
   const mobile = normalizeIranianMobile(rawMobile),
     expected = normalizeIranianMobile(expectedMobile);
+  const names = validateCustomerName(firstName, lastName);
   await requireMobileIndex();
   try {
     const update =
       mobile === expected
-        ? { $set: { name: nameValue(name) } }
+        ? { $set: names }
         : {
-            $set: { name: nameValue(name), mobile, mobileVerified: false },
+            $set: { ...names, mobile, mobileVerified: false },
             $inc: { authVersion: 1 },
             $unset: { phoneChange: "" },
           };
@@ -172,12 +176,13 @@ export async function listAdminCustomers(
     Customer.countDocuments(),
     Customer.countDocuments({ mobileVerified: { $ne: true } }),
     Customer.find(filter)
-      .select("name mobile mobileVerified createdAt")
+      .select("name firstName lastName mobile mobileVerified createdAt")
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
     Order.aggregate([
+      { $match: { isTest: { $ne: true } } },
       { $group: groupMetrics("$customerId") },
       {
         $set: {
@@ -212,7 +217,7 @@ export async function listAdminCustomers(
   const ids = customers.map((c) => String(c._id));
   const aggregates = ids.length
     ? await Order.aggregate([
-        { $match: { customerId: { $in: ids } } },
+        { $match: { customerId: { $in: ids }, isTest: { $ne: true } } },
         { $group: groupMetrics("$customerId") },
       ] as mongoose.PipelineStage[])
     : [];
@@ -234,6 +239,7 @@ export async function listAdminCustomers(
       return {
         id,
         name: c.name,
+        ...customerNameParts(c),
         mobile: c.mobile,
         mobileVerified: c.mobileVerified === true,
         createdAt: c.createdAt,
