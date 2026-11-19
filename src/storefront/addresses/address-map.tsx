@@ -32,8 +32,8 @@ export function AddressMap({
         const instance = L.map(node.current, { keyboard: true }).setView(
           point.current
             ? [point.current.lat, point.current.lng]
-            : [35.6892, 51.389],
-          point.current ? 15 : 11,
+            : [35.69972, 51.33722],
+          15,
         );
         map.current = instance;
         if (point.current) {
@@ -58,7 +58,13 @@ export function AddressMap({
             })[c] || c,
         );
         let failures = 0;
-        const tiles = L.tileLayer(config.template, { attribution, maxZoom: 19 })
+        const tiles = L.tileLayer(config.template, {
+          attribution:
+            config.template === "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+              : attribution,
+          maxZoom: 19,
+        })
           .on("tileerror", () => {
             failures++;
             if (failures >= 3) setError(true);
