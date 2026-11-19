@@ -3,6 +3,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddShoppingCartOutlinedIcon from "@mui/icons-material/AddShoppingCartOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterAltOffOutlinedIcon from "@mui/icons-material/FilterAltOffOutlined";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import {
   Alert,
   Button,
@@ -10,10 +15,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   TextField,
   MenuItem,
 } from "@mui/material";
 import { formatMoney, formatTehranJalali } from "@/shared/locale";
+import { SandboxAdminOrders } from "./sandbox-orders";
 const labels: Record<string, string> = {
   preparing: "در حال آماده‌سازی",
   delivered: "تحویل‌شده",
@@ -21,6 +28,7 @@ const labels: Record<string, string> = {
 };
 type Summary = {
   code: string;
+  isTest: boolean;
   status: string;
   placedAt: string;
   customerName: string;
@@ -30,6 +38,7 @@ type Summary = {
 type List = { items: Summary[]; total: number; page: number; limit: number };
 type Order = {
   code: string;
+  isTest: boolean;
   status: string;
   placedAt: string;
   customer: { name: string; mobile: string };
@@ -104,9 +113,17 @@ export function OrderManagementList() {
     setState({ data: null, error: false });
   }
   return (
-    <>
-      <div className="dashboard-heading">
-        <h1>سفارش‌ها</h1>
+    <div className="admin-orders-page">
+      <div className="dashboard-heading orders-page-heading">
+        <div className="orders-page-title">
+          <span className="orders-page-icon">
+            <ReceiptLongOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h1>سفارش‌ها</h1>
+            <p>بررسی و مدیریت سفارش‌های فروشگاه</p>
+          </div>
+        </div>
         <Button
           component={Link}
           href="/admin/orders/new"
@@ -117,7 +134,20 @@ export function OrderManagementList() {
           پیش‌نمایش سفارش دستی
         </Button>
       </div>
-      <section className="dashboard-panel">
+      <SandboxAdminOrders />
+      <section
+        className="dashboard-panel orders-list-panel"
+        aria-label="فهرست سفارش‌ها"
+      >
+        <div className="orders-list-heading">
+          <span className="orders-section-icon">
+            <ShoppingBagOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h2>فهرست سفارش‌ها</h2>
+            <p>برای مشاهده جزئیات، سفارش مورد نظر را انتخاب کنید.</p>
+          </div>
+        </div>
         <div className="customer-filters">
           <TextField
             fullWidth={false}
@@ -126,7 +156,16 @@ export function OrderManagementList() {
             label="جست‌وجوی کد، نام یا همراه"
             type="search"
             value={query}
-            slotProps={{ htmlInput: { maxLength: 120 } }}
+            slotProps={{
+              htmlInput: { maxLength: 120 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
             onChange={(e) => {
               reset();
               setPage(1);
@@ -153,6 +192,20 @@ export function OrderManagementList() {
               </MenuItem>
             ))}
           </TextField>
+          {(query || status !== "all") && (
+            <Button
+              size="small"
+              startIcon={<FilterAltOffOutlinedIcon />}
+              onClick={() => {
+                reset();
+                setPage(1);
+                setQuery("");
+                setStatus("all");
+              }}
+            >
+              پاک‌کردن فیلتر
+            </Button>
+          )}
         </div>
         {state.error ? (
           <div role="alert">
@@ -171,29 +224,89 @@ export function OrderManagementList() {
           <p role="status">در حال بارگذاری…</p>
         ) : (
           <>
-            <p role="status">
+            <p role="status" className="orders-results-count">
               {state.data.total.toLocaleString("fa-IR")} سفارش پیدا شد.
             </p>
             {state.data.items.length ? (
-              <div className="dashboard-orders">
-                {state.data.items.map((row) => (
-                  <article key={row.code}>
-                    <Link
-                      href={`/admin/orders/${encodeURIComponent(row.code)}`}
-                      dir="ltr"
-                    >
-                      {row.code}
-                    </Link>
-                    <span>{row.customerName || "نام ثبت نشده"}</span>
-                    <bdi>{row.mobile}</bdi>
-                    <span>{labels[row.status]}</span>
-                    <span>{formatTehranJalali(row.placedAt)}</span>
-                    <span>{money(row.totalRials)}</span>
-                  </article>
-                ))}
+              <div className="orders-table-wrap">
+                <table className="orders-table">
+                  <thead>
+                    <tr>
+                      <th>کد سفارش</th>
+                      <th>مشتری</th>
+                      <th>شماره همراه</th>
+                      <th>وضعیت</th>
+                      <th>تاریخ ثبت</th>
+                      <th>مبلغ سفارش</th>
+                      <th>
+                        <span className="sr-only">جزئیات</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.data.items.map((row) => (
+                      <tr key={row.code}>
+                        <td data-label="کد سفارش">
+                          <div className="order-code-cell">
+                            <Link
+                              href={`/admin/orders/${encodeURIComponent(row.code)}`}
+                            >
+                              <bdi dir="ltr">{row.code}</bdi>
+                            </Link>
+                            {row.isTest && (
+                              <span className="order-test-badge">آزمایشی</span>
+                            )}
+                          </div>
+                        </td>
+                        <td data-label="مشتری">
+                          <span className="order-customer">
+                            <span
+                              className="order-customer-avatar"
+                              aria-hidden="true"
+                            >
+                              {Array.from(row.customerName || "؟")[0]}
+                            </span>
+                            <strong>
+                              {row.customerName || "نام ثبت نشده"}
+                            </strong>
+                          </span>
+                        </td>
+                        <td data-label="شماره همراه">
+                          <bdi dir="ltr">{row.mobile || "ثبت نشده"}</bdi>
+                        </td>
+                        <td data-label="وضعیت">
+                          <span
+                            className={`admin-order-status ${row.status === "delivered" ? "is-delivered" : row.status === "cancelled" ? "is-cancelled" : "is-preparing"}`}
+                          >
+                            <span aria-hidden="true" />
+                            {labels[row.status] || "وضعیت نامشخص"}
+                          </span>
+                        </td>
+                        <td data-label="تاریخ ثبت">
+                          {formatTehranJalali(row.placedAt)}
+                        </td>
+                        <td data-label="مبلغ سفارش">
+                          <strong>{money(row.totalRials)}</strong>
+                        </td>
+                        <td data-label="جزئیات">
+                          <Link
+                            className="order-details-link"
+                            href={`/admin/orders/${encodeURIComponent(row.code)}`}
+                            aria-label={`جزئیات سفارش ${row.code}`}
+                          >
+                            جزئیات <ChevronLeftIcon aria-hidden="true" />
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <p>سفارشی با این فیلترها پیدا نشد.</p>
+              <div className="orders-empty">
+                <ShoppingBagOutlinedIcon aria-hidden="true" />
+                <p>سفارشی با این فیلترها پیدا نشد.</p>
+              </div>
             )}
             <div className="dashboard-pagination">
               <Button
@@ -219,7 +332,7 @@ export function OrderManagementList() {
           </>
         )}
       </section>
-    </>
+    </div>
   );
 }
 export function OrderManagementDetail({ code }: { code: string }) {
@@ -319,6 +432,12 @@ export function OrderManagementDetail({ code }: { code: string }) {
       <h1>
         سفارش <bdi>{order.code}</bdi>
       </h1>
+      {order.isTest && (
+        <Alert severity="warning">
+          این سفارش و پرداخت آن آزمایشی است و برای ارسال یا درآمد واقعی ثبت نشده
+          است.
+        </Alert>
+      )}
       {message && (
         <Alert role="status" severity="success">
           {message}
@@ -366,11 +485,13 @@ export function OrderManagementDetail({ code }: { code: string }) {
           <h2>پرداخت</h2>
           <p>
             وضعیت:{" "}
-            {order.payment.status === "verified"
-              ? "تأییدشده"
-              : order.payment.status === "failed"
-                ? "ناموفق"
-                : "در انتظار تأیید"}
+            {order.payment.status === "sandbox_verified"
+              ? "پرداخت آزمایشی موفق"
+              : order.payment.status === "verified"
+                ? "تأییدشده"
+                : order.payment.status === "failed"
+                  ? "ناموفق"
+                  : "در انتظار تأیید"}
           </p>
           <p>مبلغ پرداخت‌شده: {money(order.totals.paidRials)}</p>
           <p>
