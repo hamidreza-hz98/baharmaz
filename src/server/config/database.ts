@@ -36,7 +36,7 @@ export function getDatabaseConfig(
   } catch {
     throw new Error(`${key} must be a valid MongoDB connection URI.`);
   }
-  let dbName = "lamsechi";
+  let dbName = env.MONGODB_DB_NAME?.trim() || "lamsechi";
   if (isTest) {
     dbName = env.MONGODB_TEST_DB_NAME ?? "";
     if (!/^lamsechi_test_[a-z0-9_]{1,40}$/.test(dbName))
