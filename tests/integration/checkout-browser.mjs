@@ -51,7 +51,6 @@ try {
       await page
         .getByRole("radio", { name: new RegExp(`خانه ${label}`) })
         .check();
-      await page.getByRole("button", { name: "تأیید نشانی" }).click();
       await page.getByText(/نشانی انتخاب شد/).waitFor();
       await page
         .getByText("قوانین و هزینه ارسال هنوز تنظیم نشده است.")
