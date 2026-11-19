@@ -22,6 +22,8 @@ const customerSchema = new Schema(
   {
     mobile: { type: String, required: true, match: /^09\d{9}$/ },
     name: { type: String, required: true, trim: true, maxlength: 120 },
+    firstName: { type: String, trim: true, maxlength: 60 },
+    lastName: { type: String, trim: true, maxlength: 60 },
     passwordHash: { type: String, select: false },
     mobileVerified: { type: Boolean, default: false },
     authVersion: { type: Number, default: 0, min: 0 },
@@ -80,14 +82,17 @@ export function sessionDays(value: string | undefined): number {
     throw new Error("SESSION_DAYS must be an integer from 1 to 365.");
   return Number(value);
 }
-export async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(
+  password: string,
+  minimumLength = 12,
+): Promise<string> {
   if (
     typeof password !== "string" ||
-    password.length < 12 ||
+    password.length < minimumLength ||
     Buffer.byteLength(password, "utf8") > 1024
   )
     throw new Error(
-      "Password must contain at least 12 characters and at most 1024 bytes.",
+      `Password must contain at least ${minimumLength} characters and at most 1024 bytes.`,
     );
   const salt = randomBytes(16);
   const key = await scrypt(password, salt);
