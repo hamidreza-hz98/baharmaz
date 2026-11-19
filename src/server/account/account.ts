@@ -8,6 +8,10 @@ import {
 } from "../../shared/locale.ts";
 import { issueOtp, consumeOtp } from "../otp/challenge.ts";
 import type { SmsProvider } from "../otp/provider.ts";
+import {
+  customerNameParts,
+  validateCustomerName,
+} from "../../shared/customer-name.ts";
 
 function nameValue(name: string) {
   const value = name.trim();
@@ -21,13 +25,15 @@ function validId(id: string) {
 }
 export async function getCustomerProfile(customerId: string) {
   validId(customerId);
-  return Customer.findById(customerId)
-    .select("name mobile birthdate mobileVerified")
+  const customer = await Customer.findById(customerId)
+    .select("name firstName lastName mobile birthdate mobileVerified")
     .lean();
+  return customer ? { ...customer, ...customerNameParts(customer) } : null;
 }
 export async function updateCustomerProfile(
   customerId: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   birthdate: string | null,
 ) {
   validId(customerId);
@@ -35,13 +41,19 @@ export async function updateCustomerProfile(
   const canonical = parsed
     ? `${parsed.year}/${String(parsed.month).padStart(2, "0")}/${String(parsed.day).padStart(2, "0")}`
     : null;
-  return Customer.findByIdAndUpdate(
+  const customer = await Customer.findByIdAndUpdate(
     customerId,
-    { $set: { name: nameValue(name), birthdate: canonical } },
+    {
+      $set: {
+        ...validateCustomerName(firstName, lastName),
+        birthdate: canonical,
+      },
+    },
     { new: true, runValidators: true },
   )
-    .select("name mobile birthdate mobileVerified")
+    .select("name firstName lastName mobile birthdate mobileVerified")
     .lean();
+  return customer ? { ...customer, ...customerNameParts(customer) } : null;
 }
 export async function updateAdminProfile(
   adminId: string,
