@@ -13,6 +13,12 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import PermMediaOutlinedIcon from "@mui/icons-material/PermMediaOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
+import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { formatMoney, formatTehranJalali } from "@/shared/locale";
 
 type OrderRow = {
@@ -34,6 +40,41 @@ const statuses = [
   ["delivered", "تحویل‌شده"],
   ["cancelled", "لغوشده"],
 ] as const;
+function PanelTitle({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="dashboard-panel-title">
+      <span className="dashboard-panel-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <div>
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
+      </div>
+    </div>
+  );
+}
+function EmptyState({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="dashboard-empty">
+      <span aria-hidden="true">{icon}</span>
+      <p>{children}</p>
+    </div>
+  );
+}
 function useData<T>(url: string) {
   const [state, setState] = useState<{
     data: T | null;
@@ -120,7 +161,11 @@ function OrderList({
   return (
     <section className="dashboard-panel">
       <div className="dashboard-heading">
-        <h2>{all ? "سفارش‌ها" : "سفارش‌های اخیر"}</h2>
+        <PanelTitle
+          icon={<ReceiptLongOutlinedIcon />}
+          title={all ? "سفارش‌ها" : "سفارش‌های اخیر"}
+          description={!all ? "آخرین فعالیت‌های فروشگاه در یک نگاه" : undefined}
+        />
         {!all && (
           <Button
             component={Link}
@@ -151,7 +196,9 @@ function OrderList({
       <LoadState {...state} />
       {state.data &&
         (state.data.items.length === 0 ? (
-          <p>سفارشی در این وضعیت وجود ندارد.</p>
+          <EmptyState icon={<ReceiptLongOutlinedIcon />}>
+            سفارشی در این وضعیت وجود ندارد.
+          </EmptyState>
         ) : (
           <div className="dashboard-orders">
             {state.data.items.map((item) => (
@@ -192,7 +239,12 @@ function OrderList({
           </button>
         </div>
       )}
-      {!all && <p>حداکثر ۱۰ سفارش اخیر در هر وضعیت نمایش داده می‌شود.</p>}
+      {!all && (
+        <p className="dashboard-footnote">
+          <InfoOutlinedIcon aria-hidden="true" /> حداکثر ۱۰ سفارش اخیر در هر
+          وضعیت نمایش داده می‌شود.
+        </p>
+      )}
     </section>
   );
 }
@@ -215,7 +267,11 @@ function MetricsContent({
     <>
       <section className="dashboard-panel">
         <div className="dashboard-heading">
-          <h2>فروش پرداخت‌شده</h2>
+          <PanelTitle
+            icon={<InsightsOutlinedIcon />}
+            title="فروش پرداخت‌شده"
+            description="پرداخت‌های تأییدشده بر پایه زمان تهران"
+          />
           <TextField
             select
             fullWidth={false}
@@ -231,14 +287,16 @@ function MetricsContent({
             <MenuItem value="year">سال</MenuItem>
           </TextField>
         </div>
-        <p>
-          پرداخت‌های تأییدشده، بر پایه زمان تهران؛ بازپرداخت در داده‌ها ثبت
+        <p className="dashboard-footnote">
+          <InfoOutlinedIcon aria-hidden="true" /> بازپرداخت در داده‌ها ثبت
           نمی‌شود.
         </p>
         <LoadState {...state} />
         {state.data &&
           (state.data.chart.length === 0 ? (
-            <p>پرداخت تأییدشده‌ای در این بازه ثبت نشده است.</p>
+            <EmptyState icon={<InsightsOutlinedIcon />}>
+              پرداخت تأییدشده‌ای در این بازه ثبت نشده است.
+            </EmptyState>
           ) : (
             <div className="dashboard-chart">
               {state.data.chart.map((point) => (
@@ -257,8 +315,11 @@ function MetricsContent({
           ))}
       </section>
       <section className="dashboard-panel">
-        <h2>مشتریان برتر</h2>
-        <p>مجموع پرداخت تأییدشده در همه زمان‌ها</p>
+        <PanelTitle
+          icon={<PeopleOutlinedIcon />}
+          title="مشتریان برتر"
+          description="مجموع پرداخت تأییدشده در همه زمان‌ها"
+        />
         <LoadState {...state} />
         {state.data &&
           (state.data.customers.length ? (
@@ -269,15 +330,17 @@ function MetricsContent({
               </p>
             ))
           ) : (
-            <p>پرداخت تأییدشده‌ای وجود ندارد.</p>
+            <EmptyState icon={<PeopleOutlinedIcon />}>
+              پرداخت تأییدشده‌ای وجود ندارد.
+            </EmptyState>
           ))}
       </section>
       <section className="dashboard-panel">
-        <h2>پرفروش‌ترین نام‌های ثبت‌شده</h2>
-        <p>
-          تعداد اقلام در سفارش‌های پرداخت‌شده؛ نام‌های یکسان با هم محاسبه
-          می‌شوند.
-        </p>
+        <PanelTitle
+          icon={<ShoppingBagOutlinedIcon />}
+          title="پرفروش‌ترین نام‌های ثبت‌شده"
+          description="تعداد اقلام در سفارش‌های پرداخت‌شده؛ نام‌های یکسان با هم محاسبه می‌شوند."
+        />
         <LoadState {...state} />
         {state.data &&
           (state.data.products.length ? (
@@ -288,7 +351,9 @@ function MetricsContent({
               </p>
             ))
           ) : (
-            <p>کالای پرداخت‌شده‌ای وجود ندارد.</p>
+            <EmptyState icon={<ShoppingBagOutlinedIcon />}>
+              کالای پرداخت‌شده‌ای وجود ندارد.
+            </EmptyState>
           ))}
       </section>
     </>
@@ -296,9 +361,17 @@ function MetricsContent({
 }
 export function Dashboard() {
   return (
-    <>
-      <div className="dashboard-heading">
-        <h1>مدیریت فروشگاه</h1>
+    <div className="admin-dashboard">
+      <div className="dashboard-heading dashboard-welcome">
+        <div className="dashboard-welcome-title">
+          <span className="dashboard-welcome-icon">
+            <StorefrontOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h1>مدیریت فروشگاه</h1>
+            <p>نمای کلی فروش و فعالیت‌های بهارمز</p>
+          </div>
+        </div>
         <Button
           component={Link}
           href="/admin/orders/new"
@@ -309,12 +382,18 @@ export function Dashboard() {
           پیش‌نمایش سفارش دستی
         </Button>
       </div>
-      <p>ایجاد سفارش هنوز در دسترس نیست.</p>
+      <p className="dashboard-notice">
+        <InfoOutlinedIcon aria-hidden="true" /> ایجاد سفارش هنوز در دسترس نیست.
+      </p>
       <div className="dashboard-grid">
         <AdminOrders />
         <MetricsPanel />
         <section className="dashboard-panel">
-          <h2>دسترسی سریع</h2>
+          <PanelTitle
+            icon={<BoltOutlinedIcon />}
+            title="دسترسی سریع"
+            description="کارهای پرکاربرد مدیریت فروشگاه"
+          />
           <div className="dashboard-shortcuts">
             <Button
               component={Link}
@@ -346,6 +425,6 @@ export function Dashboard() {
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }
