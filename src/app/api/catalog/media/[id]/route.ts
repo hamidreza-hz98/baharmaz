@@ -2,7 +2,7 @@ import { Readable } from "node:stream";
 import { connectDatabase } from "@/server/database/connection";
 import { Product } from "@/server/products/products";
 import { getMedia } from "@/server/media/storage";
-import { Category } from "@/server/catalog/catalog";
+import { Category, Ingredient } from "@/server/catalog/catalog";
 import { readContent } from "@/server/content/settings";
 export const dynamic = "force-dynamic";
 export async function GET(
@@ -13,12 +13,13 @@ export async function GET(
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return new Response(null, { status: 404 });
     await connectDatabase();
-    const [product, category, settings] = await Promise.all([
+    const [product, category, ingredient, settings] = await Promise.all([
       Product.exists({ gallery: id, deletedAt: null }),
       Category.exists({
         deletedAt: null,
         $or: [{ imageId: id }, { iconId: id }],
       }),
+      Ingredient.exists({ iconId: id }),
       readContent(),
     ]);
     const homepage = settings.content.homepage;
@@ -26,7 +27,7 @@ export async function GET(
       homepage.aboutImageId === id ||
       settings.content.about.imageId === id ||
       homepage.banners.some((banner) => banner.imageId === id);
-    if (!product && !category && !published)
+    if (!product && !category && !ingredient && !published)
       return new Response(null, {
         status: 404,
         headers: { "Cache-Control": "no-store" },
