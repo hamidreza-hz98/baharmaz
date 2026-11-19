@@ -15,6 +15,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const response = (body: object, status = 200) =>
   NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
+const developmentCode = () =>
+  process.env.NODE_ENV === "development" &&
+  process.env.SMS_PROVIDER === "development" &&
+  process.env.OTP_DEV_LOG_CODES === "true"
+    ? "1234"
+    : undefined;
 const errorResponse = (error: unknown) =>
   error instanceof UnauthorizedError
     ? response({ error: "ابتدا وارد حساب خود شوید." }, 401)
@@ -40,12 +46,14 @@ export async function POST(request: Request) {
     const input = await readJsonObject(request);
     if (
       input.action === "profile" &&
-      typeof input.name === "string" &&
+      typeof input.firstName === "string" &&
+      typeof input.lastName === "string" &&
       (typeof input.birthdate === "string" || input.birthdate === null)
     ) {
       const profile = await updateCustomerProfile(
         principal.id,
-        input.name,
+        input.firstName,
+        input.lastName,
         input.birthdate,
       );
       return response({ profile });
@@ -68,7 +76,7 @@ export async function POST(request: Request) {
         configuredSmsProvider(),
       );
       return result === "sent"
-        ? response({ ok: true })
+        ? response({ ok: true, developmentCode: developmentCode() })
         : response(
             { error: "ارسال کد ممکن نشد. کمی بعد دوباره تلاش کنید." },
             result === "throttled" ? 429 : 503,
@@ -90,7 +98,7 @@ export async function POST(request: Request) {
         configuredSmsProvider(),
       );
       return result === "sent"
-        ? response({ ok: true })
+        ? response({ ok: true, developmentCode: developmentCode() })
         : response(
             { error: "ارسال کد ممکن نشد. کمی بعد دوباره تلاش کنید." },
             result === "throttled" ? 429 : 503,
