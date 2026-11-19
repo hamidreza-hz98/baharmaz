@@ -26,7 +26,10 @@ export async function dashboardOrders(
     ![10, 20].includes(limit)
   )
     throw new RangeError("Invalid pagination");
-  const filter = status === "all" ? {} : { status };
+  const filter =
+    status === "all"
+      ? { isTest: { $ne: true } }
+      : { status, isTest: { $ne: true } };
   const [rows, total] = await Promise.all([
     Order.find(filter)
       .select("code status placedAt customer.name totals.totalRials")
