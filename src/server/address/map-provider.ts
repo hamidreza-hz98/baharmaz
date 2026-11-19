@@ -11,7 +11,12 @@ export class GeocodeBusy extends Error {}
 export function publicMapConfig(env: NodeJS.ProcessEnv = process.env) {
   const template = env.MAP_TILE_URL?.trim() || "";
   const attribution = env.MAP_ATTRIBUTION?.trim() || "";
-  if (!template && !attribution) return { enabled: false as const };
+  if (!template && !attribution)
+    return {
+      enabled: true as const,
+      template: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution: "© OpenStreetMap contributors",
+    };
   if (
     template.length > 2048 ||
     attribution.length < 1 ||
