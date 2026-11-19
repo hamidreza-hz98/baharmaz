@@ -51,10 +51,76 @@ try {
     "customer",
   );
   assert.ok(detail && otherDetail);
-  const changed = await updateCustomerProfile(userId, "نام تازه", "۱۳۹۹/۱۲/۳۰");
+  const changed = await updateCustomerProfile(
+    userId,
+    "نام",
+    "تازه",
+    "۱۳۹۹/۱۲/۳۰",
+  );
   assert.equal(changed.birthdate, "1399/12/30");
-  await assert.rejects(updateCustomerProfile(userId, "نام", "۱۴۰۰/۱۲/۳۰"));
+  assert.equal(changed.firstName, "نام");
+  assert.equal(changed.lastName, "تازه");
+  assert.equal(changed.name, "نام تازه");
+  await assert.rejects(
+    updateCustomerProfile(userId, "نام", "تازه", "۱۴۰۰/۱۲/۳۰"),
+  );
   assert.equal((await Customer.findById(otherId)).name, "کاربر دیگر");
+  const devUser = await Customer.create({
+    mobile: "09120000030",
+    name: "آزمایش توسعه",
+    mobileVerified: true,
+  });
+  const devSession = await createSession("customer", String(devUser._id));
+  const devDetail = await resolveSessionDetails(devSession.token, "customer");
+  const devEnv = {
+    NODE_ENV: "development",
+    SMS_PROVIDER: "development",
+    OTP_DEV_LOG_CODES: "true",
+    OTP_SECRET: "account-test-secret-at-least-32-bytes",
+  };
+  let developmentCode = "";
+  const devProvider = createDevelopmentSmsProvider(devEnv, (_phone, value) => {
+    developmentCode = value;
+  });
+  assert.equal(
+    await startPhoneChange(
+      String(devUser._id),
+      devDetail.sessionId,
+      devProvider,
+      devEnv,
+    ),
+    "sent",
+  );
+  assert.equal(developmentCode, "1234");
+  assert.equal(
+    await verifyOldPhone(
+      String(devUser._id),
+      devDetail.sessionId,
+      "1234",
+      devEnv,
+    ),
+    true,
+  );
+  assert.equal(
+    await sendNewPhoneCode(
+      String(devUser._id),
+      devDetail.sessionId,
+      "09120000031",
+      devProvider,
+      devEnv,
+    ),
+    "sent",
+  );
+  assert.equal(developmentCode, "1234");
+  assert.equal(
+    await confirmNewPhone(
+      String(devUser._id),
+      devDetail.sessionId,
+      "1234",
+      devEnv,
+    ),
+    true,
+  );
   const env = {
     NODE_ENV: "test",
     OTP_SECRET: "account-test-secret-at-least-32-bytes",
