@@ -1,15 +1,48 @@
 import { expect, test } from "@playwright/test";
-test("delivery settings preserve draft and require confirmation for disable", async ({
+
+test("delivery form preserves edits on conflict and confirms disabling", async ({
   page,
 }) => {
-  let count = 0;
+  const policy = {
+    zones: [
+      {
+        id: "zone-1",
+        name: "تهران آزمایشی",
+        feeRials: 450000,
+        polygon: [
+          { lat: 35.66, lng: 51.29 },
+          { lat: 35.66, lng: 51.39 },
+          { lat: 35.74, lng: 51.39 },
+          { lat: 35.74, lng: 51.29 },
+        ],
+      },
+    ],
+    slots: [
+      {
+        id: "slot-1",
+        label: "صبح",
+        weekdays: [6, 7, 1],
+        start: "09:00",
+        end: "12:00",
+        capacity: null,
+      },
+    ],
+    closures: [],
+    leadMinutes: 120,
+    cutoffDaysBefore: 0,
+    cutoffTime: "23:59",
+    horizonDays: 7,
+    quoteTtlSeconds: 600,
+  };
+  let writes = 0;
+  await page.route("https://tile.openstreetmap.org/**", (route) =>
+    route.abort(),
+  );
   await page.route("**/api/admin/delivery", (route) => {
     if (route.request().method() === "GET")
-      return route.fulfill({
-        json: { revision: 2, active: true, policy: { zones: [] } },
-      });
-    count++;
-    if (count === 1)
+      return route.fulfill({ json: { revision: 2, active: true, policy } });
+    writes++;
+    if (writes === 1)
       return route.fulfill({
         status: 409,
         json: { error: "تنظیمات تغییر کرده است." },
@@ -20,24 +53,19 @@ test("delivery settings preserve draft and require confirmation for disable", as
     });
   });
   await page.goto("/operational-settings-test-probe");
-  const editor = page.getByLabel("قوانین ارسال (JSON)");
-  await editor.fill("{invalid");
-  await page.getByRole("button", { name: "اعتبارسنجی و ذخیره قوانین" }).click();
+  const fee = page.getByLabel("هزینه ارسال (تومان)");
+  await expect(fee).toHaveValue("45000");
+  await fee.fill("50000");
+  await page.getByRole("button", { name: "ذخیره قوانین ارسال" }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "ساختار قوانین" }),
-  ).toBeVisible();
-  await editor.fill('{"zones": []}');
-  await page.getByRole("button", { name: "اعتبارسنجی و ذخیره قوانین" }).click();
-  await expect(
-    page.getByRole("alert").filter({ hasText: "پیش‌نویس شما حفظ شده است" }),
-  ).toBeVisible();
-  await expect(editor).toHaveValue('{"zones": []}');
+    page.getByRole("alert").filter({ hasText: "تنظیمات تغییر کرده است" }),
+  ).toContainText("پیش‌نویس شما حفظ شده است");
+  await expect(fee).toHaveValue("50000");
   await page.getByRole("button", { name: "غیرفعال کردن ارسال" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "انصراف" }).click();
-  await expect(editor).toHaveValue('{"zones": []}');
+  await expect(fee).toHaveValue("50000");
   await page.getByRole("button", { name: "غیرفعال کردن ارسال" }).click();
   await page.getByRole("button", { name: "تأیید غیرفعال‌سازی" }).click();
   await expect(page.getByText("ارسال غیرفعال شد.")).toBeVisible();
-  await expect(editor).toHaveValue("");
+  await expect(page.getByText("هنوز محدوده‌ای ثبت نشده است.")).toBeVisible();
 });
