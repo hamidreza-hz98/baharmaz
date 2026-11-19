@@ -61,10 +61,13 @@ export async function POST(request: Request) {
         items: cart.items.map((item) => ({
           id: item.productId,
           title: item.title,
+          image: item.image,
           quantity: item.quantity,
           saleRials: item.saleRials,
           lineRials: item.lineRials,
         })),
+        subtotalRials: cart.subtotalRials,
+        discountRials: cart.discountRials,
         delivery: quote,
       },
     });
