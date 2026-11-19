@@ -1,6 +1,23 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import CollectionsOutlinedIcon from "@mui/icons-material/CollectionsOutlined";
+import FormatQuoteOutlinedIcon from "@mui/icons-material/FormatQuoteOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ContactMailOutlinedIcon from "@mui/icons-material/ContactMailOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import Image from "next/image";
+import { RichDescriptionEditor } from "@/admin/products/rich-description-editor";
 import {
   Alert,
   Button,
@@ -10,10 +27,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { MediaPicker } from "@/admin/media/media-picker";
-import type {
-  ContentSection,
-  SiteContentSettings,
-} from "@/shared/content";
+import type { ContentSection, SiteContentSettings } from "@/shared/content";
 
 const sectionTitles: Record<ContentSection, string> = {
   homepage: "تنظیمات صفحه اصلی",
@@ -60,6 +74,7 @@ function ListControls({
     <div className="content-controls">
       <Button
         type="button"
+        startIcon={<ArrowUpwardIcon />}
         ref={up}
         disabled={index === 0}
         onClick={() => {
@@ -72,6 +87,7 @@ function ListControls({
       </Button>
       <Button
         type="button"
+        startIcon={<ArrowDownwardIcon />}
         ref={down}
         disabled={index === length - 1}
         onClick={() => {
@@ -83,7 +99,12 @@ function ListControls({
       >
         پایین
       </Button>
-      <Button type="button" onClick={onRemove} aria-label={`حذف ${label}`}>
+      <Button
+        type="button"
+        startIcon={<DeleteOutlineOutlinedIcon />}
+        onClick={onRemove}
+        aria-label={`حذف ${label}`}
+      >
         حذف
       </Button>
     </div>
@@ -203,9 +224,49 @@ export function ContentSettingsEditor({
   const h = content.homepage,
     c = content.contact;
   return (
-    <>
-      <h1>{sectionTitles[section]}</h1>
-      <p>تغییرات این بخش پس از ذخیره فقط در صفحه مربوطه اعمال می‌شوند.</p>
+    <div
+      className={`settings-editor${section === "homepage" ? " is-homepage" : section === "about" ? " is-homepage is-about" : section === "contact" ? " is-contact" : section === "faq" || section === "terms" ? " is-faq" : ""}`}
+    >
+      {section === "homepage" ||
+      section === "contact" ||
+      section === "faq" ||
+      section === "terms" ||
+      section === "about" ? (
+        <div className="homepage-settings-heading">
+          <span>
+            {section === "homepage" ? (
+              <HomeOutlinedIcon aria-hidden="true" />
+            ) : section === "contact" ? (
+              <ContactMailOutlinedIcon aria-hidden="true" />
+            ) : section === "faq" ? (
+              <QuizOutlinedIcon aria-hidden="true" />
+            ) : section === "terms" ? (
+              <GavelOutlinedIcon aria-hidden="true" />
+            ) : (
+              <InfoOutlinedIcon aria-hidden="true" />
+            )}
+          </span>
+          <div>
+            <h1>{sectionTitles[section]}</h1>
+            <p>
+              {section === "homepage"
+                ? "مدیریت بنرها و محتوای صفحه اصلی فروشگاه"
+                : section === "contact"
+                  ? "مدیریت راه‌های ارتباطی و نشانی فروشگاه"
+                  : section === "faq"
+                    ? "مدیریت پرسش‌ها و پاسخ‌های مشتریان"
+                    : section === "terms"
+                      ? "مدیریت قوانین و شرایط فروشگاه"
+                      : "مدیریت معرفی و تصویر صفحه درباره ما"}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h1>{sectionTitles[section]}</h1>
+          <p>تغییرات این بخش پس از ذخیره فقط در صفحه مربوطه اعمال می‌شوند.</p>
+        </>
+      )}
       {message && (
         <Alert severity="success" role="status">
           {message}
@@ -224,370 +285,101 @@ export function ContentSettingsEditor({
       <form onSubmit={save} className="content-settings-form">
         {section === "homepage" && (
           <>
-        <fieldset disabled={busy}>
-          <legend>بنرهای صفحه اصلی</legend>
-          <p>پیوند بنر باید مسیر داخلی فروشگاه باشد، مانند /products.</p>
-          {h.banners.map((item, index) => (
-            <div className="content-entry" key={item.id}>
-              <h3>بنر {index + 1}</h3>
-              <label>
-                متن جایگزین بنر {index + 1}
-                <input
-                  maxLength={200}
-                  value={item.alt}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.homepage.banners[index].alt = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <label>
-                پیوند بنر {index + 1}
-                <input
-                  dir="ltr"
-                  maxLength={2048}
-                  value={item.href}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.homepage.banners[index].href = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <p>
-                {item.imageId
-                  ? "تصویر انتخاب شده است."
-                  : "تصویری انتخاب نشده است."}
+            <fieldset disabled={busy} className="homepage-settings-section">
+              <legend>
+                <span className="homepage-settings-legend">
+                  <span>
+                    <CollectionsOutlinedIcon aria-hidden="true" />
+                  </span>{" "}
+                  بنرهای صفحه اصلی
+                </span>
+              </legend>
+              <p className="homepage-settings-hint">
+                <InfoOutlinedIcon aria-hidden="true" /> پیوند بنر باید مسیر
+                داخلی فروشگاه باشد، مانند /products.
               </p>
-              <Button
-                type="button"
-                onClick={() => setPicker({ section: "banner", id: item.id })}
-              >
-                انتخاب تصویر بنر {index + 1}
-              </Button>
-              {item.imageId && (
-                <Button
-                  type="button"
-                  onClick={() =>
-                    edit((d) => {
-                      d.homepage.banners[index].imageId = null;
-                    })
-                  }
+              {h.banners.map((item, index) => (
+                <div
+                  className="content-entry homepage-banner-entry"
+                  key={item.id}
                 >
-                  حذف تصویر بنر {index + 1}
-                </Button>
-              )}
-              <ListControls
-                index={index}
-                length={h.banners.length}
-                label={`بنر ${index + 1}`}
-                onMove={(v) => edit((d) => move(d.homepage.banners, index, v))}
-                onRemove={() =>
-                  edit((d) => {
-                    d.homepage.banners.splice(index, 1);
-                  })
-                }
-              />
-            </div>
-          ))}
-          <Button
-            type="button"
-            disabled={h.banners.length >= 30}
-            onClick={() =>
-              edit((d) => {
-                d.homepage.banners.push({
-                  id: newId(),
-                  imageId: null,
-                  href: "",
-                  alt: "",
-                });
-              })
-            }
-          >
-            افزودن بنر
-          </Button>
-        </fieldset>
-        <fieldset disabled={busy}>
-          <legend>شعارها و معرفی صفحه اصلی</legend>
-          {h.slogans.map((item, index) => (
-            <div className="content-entry" key={item.id}>
-              <label>
-                شعار {index + 1}
-                <input
-                  maxLength={200}
-                  value={item.text}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.homepage.slogans[index].text = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <ListControls
-                index={index}
-                length={h.slogans.length}
-                label={`شعار ${index + 1}`}
-                onMove={(v) => edit((d) => move(d.homepage.slogans, index, v))}
-                onRemove={() =>
-                  edit((d) => {
-                    d.homepage.slogans.splice(index, 1);
-                  })
-                }
-              />
-            </div>
-          ))}
-          <Button
-            type="button"
-            disabled={h.slogans.length >= 30}
-            onClick={() =>
-              edit((d) => {
-                d.homepage.slogans.push({ id: newId(), text: "" });
-              })
-            }
-          >
-            افزودن شعار
-          </Button>
-          <label>
-            عنوان معرفی صفحه اصلی
-            <input
-              maxLength={160}
-              value={h.aboutTitle}
-              onChange={(e) =>
-                edit((d) => {
-                  d.homepage.aboutTitle = e.target.value;
-                })
-              }
-            />
-          </label>
-          <label>
-            متن معرفی صفحه اصلی
-            <textarea
-              maxLength={10000}
-              value={h.aboutText}
-              onChange={(e) =>
-                edit((d) => {
-                  d.homepage.aboutText = e.target.value;
-                })
-              }
-            />
-          </label>
-          <p>
-            {h.aboutImageId
-              ? "تصویر معرفی انتخاب شده است."
-              : "تصویر معرفی انتخاب نشده است."}
-          </p>
-          <Button
-            type="button"
-            onClick={() => setPicker({ section: "home-about" })}
-          >
-            انتخاب تصویر معرفی
-          </Button>
-          {h.aboutImageId && (
-            <Button
-              type="button"
-              onClick={() =>
-                edit((d) => {
-                  d.homepage.aboutImageId = null;
-                })
-              }
-            >
-              حذف تصویر معرفی
-            </Button>
-          )}
-        </fieldset>
-          </>
-        )}
-        {section === "contact" && (
-        <fieldset disabled={busy}>
-          <legend>اطلاعات تماس</legend>
-          {c.phones.map((item, index) => (
-            <div className="content-entry" key={item.id}>
-              <label>
-                شماره تماس {index + 1}
-                <input
-                  type="tel"
-                  dir="ltr"
-                  maxLength={40}
-                  value={item.value}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.contact.phones[index].value = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <ListControls
-                index={index}
-                length={c.phones.length}
-                label={`شماره تماس ${index + 1}`}
-                onMove={(v) => edit((d) => move(d.contact.phones, index, v))}
-                onRemove={() =>
-                  edit((d) => {
-                    d.contact.phones.splice(index, 1);
-                  })
-                }
-              />
-            </div>
-          ))}
-          <Button
-            type="button"
-            disabled={c.phones.length >= 20}
-            onClick={() =>
-              edit((d) => {
-                d.contact.phones.push({ id: newId(), value: "" });
-              })
-            }
-          >
-            افزودن شماره تماس
-          </Button>
-          {c.socials.map((item, index) => (
-            <div className="content-entry" key={item.id}>
-              <label>
-                نام شبکه اجتماعی یا پیام‌رسان {index + 1}
-                <input
-                  maxLength={80}
-                  value={item.label}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.contact.socials[index].label = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <label>
-                پیوند شبکه اجتماعی یا پیام‌رسان {index + 1}
-                <input
-                  type="url"
-                  dir="ltr"
-                  maxLength={2048}
-                  value={item.url}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d.contact.socials[index].url = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <ListControls
-                index={index}
-                length={c.socials.length}
-                label={`شبکه اجتماعی ${index + 1}`}
-                onMove={(v) => edit((d) => move(d.contact.socials, index, v))}
-                onRemove={() =>
-                  edit((d) => {
-                    d.contact.socials.splice(index, 1);
-                  })
-                }
-              />
-            </div>
-          ))}
-          <Button
-            type="button"
-            disabled={c.socials.length >= 20}
-            onClick={() =>
-              edit((d) => {
-                d.contact.socials.push({ id: newId(), label: "", url: "" });
-              })
-            }
-          >
-            افزودن شبکه اجتماعی یا پیام‌رسان
-          </Button>
-          <label>
-            نشانی فروشگاه
-            <textarea
-              maxLength={1000}
-              value={c.address}
-              onChange={(e) =>
-                edit((d) => {
-                  d.contact.address = e.target.value;
-                })
-              }
-            />
-          </label>
-          <label>
-            پیوند نقشه
-            <input
-              type="url"
-              dir="ltr"
-              maxLength={2048}
-              value={c.mapUrl}
-              onChange={(e) =>
-                edit((d) => {
-                  d.contact.mapUrl = e.target.value;
-                })
-              }
-            />
-          </label>
-          <p>پیوند شبکه‌ها و نقشه باید با https شروع شود.</p>
-        </fieldset>
-        )}
-        {(section === "faq" || section === "terms" ? [section] : []).map((section) => {
-          const label = section === "faq" ? "پرسش‌های متداول" : "قوانین";
-          const group = content[section];
-          return (
-            <fieldset key={section} disabled={busy}>
-              <legend>{label}</legend>
-              <label>
-                عنوان {label}
-                <input
-                  maxLength={160}
-                  value={group.title}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d[section].title = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              <label>
-                توضیح {label}
-                <textarea
-                  maxLength={2000}
-                  value={group.description}
-                  onChange={(e) =>
-                    edit((d) => {
-                      d[section].description = e.target.value;
-                    })
-                  }
-                />
-              </label>
-              {group.items.map((item, index) => (
-                <div className="content-entry" key={item.id}>
+                  <h3>بنر {index + 1}</h3>
                   <label>
-                    عنوان مورد {index + 1} {label}
+                    متن جایگزین بنر {index + 1}
                     <input
-                      maxLength={250}
-                      value={item.title}
+                      maxLength={200}
+                      value={item.alt}
                       onChange={(e) =>
                         edit((d) => {
-                          d[section].items[index].title = e.target.value;
+                          d.homepage.banners[index].alt = e.target.value;
                         })
                       }
                     />
                   </label>
                   <label>
-                    متن مورد {index + 1} {label}
-                    <textarea
-                      maxLength={10000}
-                      value={item.body}
+                    پیوند بنر {index + 1}
+                    <input
+                      dir="ltr"
+                      maxLength={2048}
+                      value={item.href}
                       onChange={(e) =>
                         edit((d) => {
-                          d[section].items[index].body = e.target.value;
+                          d.homepage.banners[index].href = e.target.value;
                         })
                       }
                     />
                   </label>
+                  <div className="homepage-image-preview">
+                    {item.imageId ? (
+                      <Image
+                        unoptimized
+                        src={`/api/admin/media/${encodeURIComponent(item.imageId)}`}
+                        width={360}
+                        height={180}
+                        alt={item.alt || `پیش‌نمایش بنر ${index + 1}`}
+                      />
+                    ) : (
+                      <span>
+                        <CollectionsOutlinedIcon aria-hidden="true" /> تصویری
+                        انتخاب نشده است.
+                      </span>
+                    )}
+                  </div>
+                  <div className="homepage-image-actions">
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<AddPhotoAlternateOutlinedIcon />}
+                      onClick={() =>
+                        setPicker({ section: "banner", id: item.id })
+                      }
+                    >
+                      انتخاب تصویر بنر {index + 1}
+                    </Button>
+                    {item.imageId && (
+                      <Button
+                        type="button"
+                        startIcon={<DeleteOutlineOutlinedIcon />}
+                        onClick={() =>
+                          edit((d) => {
+                            d.homepage.banners[index].imageId = null;
+                          })
+                        }
+                      >
+                        حذف تصویر بنر {index + 1}
+                      </Button>
+                    )}
+                  </div>
                   <ListControls
                     index={index}
-                    length={group.items.length}
-                    label={`مورد ${index + 1} ${label}`}
+                    length={h.banners.length}
+                    label={`بنر ${index + 1}`}
                     onMove={(v) =>
-                      edit((d) => move(d[section].items, index, v))
+                      edit((d) => move(d.homepage.banners, index, v))
                     }
                     onRemove={() =>
                       edit((d) => {
-                        d[section].items.splice(index, 1);
+                        d.homepage.banners.splice(index, 1);
                       })
                     }
                   />
@@ -595,73 +387,525 @@ export function ContentSettingsEditor({
               ))}
               <Button
                 type="button"
-                disabled={group.items.length >= 100}
+                variant="outlined"
+                startIcon={<AddOutlinedIcon />}
+                disabled={h.banners.length >= 30}
                 onClick={() =>
                   edit((d) => {
-                    d[section].items.push({ id: newId(), title: "", body: "" });
+                    d.homepage.banners.push({
+                      id: newId(),
+                      imageId: null,
+                      href: "",
+                      alt: "",
+                    });
                   })
                 }
               >
-                افزودن مورد {label}
+                افزودن بنر
               </Button>
             </fieldset>
-          );
-        })}
+            <fieldset disabled={busy} className="homepage-settings-section">
+              <legend>
+                <span className="homepage-settings-legend">
+                  <span>
+                    <FormatQuoteOutlinedIcon aria-hidden="true" />
+                  </span>{" "}
+                  شعارها و معرفی صفحه اصلی
+                </span>
+              </legend>
+              {h.slogans.map((item, index) => (
+                <div className="content-entry" key={item.id}>
+                  <label>
+                    شعار {index + 1}
+                    <input
+                      maxLength={200}
+                      value={item.text}
+                      onChange={(e) =>
+                        edit((d) => {
+                          d.homepage.slogans[index].text = e.target.value;
+                        })
+                      }
+                    />
+                  </label>
+                  <ListControls
+                    index={index}
+                    length={h.slogans.length}
+                    label={`شعار ${index + 1}`}
+                    onMove={(v) =>
+                      edit((d) => move(d.homepage.slogans, index, v))
+                    }
+                    onRemove={() =>
+                      edit((d) => {
+                        d.homepage.slogans.splice(index, 1);
+                      })
+                    }
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddOutlinedIcon />}
+                disabled={h.slogans.length >= 30}
+                onClick={() =>
+                  edit((d) => {
+                    d.homepage.slogans.push({ id: newId(), text: "" });
+                  })
+                }
+              >
+                افزودن شعار
+              </Button>
+              <label>
+                عنوان معرفی صفحه اصلی
+                <input
+                  maxLength={160}
+                  value={h.aboutTitle}
+                  onChange={(e) =>
+                    edit((d) => {
+                      d.homepage.aboutTitle = e.target.value;
+                    })
+                  }
+                />
+              </label>
+              <label>
+                متن معرفی صفحه اصلی
+                <textarea
+                  maxLength={10000}
+                  value={h.aboutText}
+                  onChange={(e) =>
+                    edit((d) => {
+                      d.homepage.aboutText = e.target.value;
+                    })
+                  }
+                />
+              </label>
+              <div className="homepage-image-preview">
+                {h.aboutImageId ? (
+                  <Image
+                    unoptimized
+                    src={`/api/admin/media/${encodeURIComponent(h.aboutImageId)}`}
+                    width={360}
+                    height={180}
+                    alt="پیش‌نمایش تصویر معرفی"
+                  />
+                ) : (
+                  <span>
+                    <CollectionsOutlinedIcon aria-hidden="true" /> تصویر معرفی
+                    انتخاب نشده است.
+                  </span>
+                )}
+              </div>
+              <div className="homepage-image-actions">
+                <Button
+                  type="button"
+                  variant="outlined"
+                  startIcon={<AddPhotoAlternateOutlinedIcon />}
+                  onClick={() => setPicker({ section: "home-about" })}
+                >
+                  انتخاب تصویر معرفی
+                </Button>
+                {h.aboutImageId && (
+                  <Button
+                    type="button"
+                    startIcon={<DeleteOutlineOutlinedIcon />}
+                    onClick={() =>
+                      edit((d) => {
+                        d.homepage.aboutImageId = null;
+                      })
+                    }
+                  >
+                    حذف تصویر معرفی
+                  </Button>
+                )}
+              </div>
+            </fieldset>
+          </>
+        )}
+        {section === "contact" && (
+          <>
+            <fieldset disabled={busy} className="contact-settings-section">
+              <legend>
+                <span className="homepage-settings-legend">
+                  <span>
+                    <PhoneOutlinedIcon aria-hidden="true" />
+                  </span>{" "}
+                  شماره‌های تماس
+                </span>
+              </legend>
+              <p className="contact-settings-description">
+                شماره‌هایی که مشتریان برای تماس با فروشگاه می‌بینند.
+              </p>
+              {c.phones.map((item, index) => (
+                <div className="content-entry" key={item.id}>
+                  <label>
+                    شماره تماس {index + 1}
+                    <input
+                      type="tel"
+                      dir="ltr"
+                      maxLength={40}
+                      value={item.value}
+                      onChange={(e) =>
+                        edit((d) => {
+                          d.contact.phones[index].value = e.target.value;
+                        })
+                      }
+                    />
+                  </label>
+                  <ListControls
+                    index={index}
+                    length={c.phones.length}
+                    label={`شماره تماس ${index + 1}`}
+                    onMove={(v) =>
+                      edit((d) => move(d.contact.phones, index, v))
+                    }
+                    onRemove={() =>
+                      edit((d) => {
+                        d.contact.phones.splice(index, 1);
+                      })
+                    }
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddOutlinedIcon />}
+                disabled={c.phones.length >= 20}
+                onClick={() =>
+                  edit((d) => {
+                    d.contact.phones.push({ id: newId(), value: "" });
+                  })
+                }
+              >
+                افزودن شماره تماس
+              </Button>
+            </fieldset>
+            <fieldset disabled={busy} className="contact-settings-section">
+              <legend>
+                <span className="homepage-settings-legend">
+                  <span>
+                    <ShareOutlinedIcon aria-hidden="true" />
+                  </span>{" "}
+                  شبکه‌های اجتماعی
+                </span>
+              </legend>
+              <p className="contact-settings-description">
+                نام و پیوند شبکه‌های اجتماعی یا پیام‌رسان‌های فروشگاه.
+              </p>
+              {c.socials.map((item, index) => (
+                <div className="content-entry" key={item.id}>
+                  <label>
+                    نام شبکه اجتماعی یا پیام‌رسان {index + 1}
+                    <input
+                      maxLength={80}
+                      value={item.label}
+                      onChange={(e) =>
+                        edit((d) => {
+                          d.contact.socials[index].label = e.target.value;
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    پیوند شبکه اجتماعی یا پیام‌رسان {index + 1}
+                    <input
+                      type="url"
+                      dir="ltr"
+                      maxLength={2048}
+                      value={item.url}
+                      onChange={(e) =>
+                        edit((d) => {
+                          d.contact.socials[index].url = e.target.value;
+                        })
+                      }
+                    />
+                  </label>
+                  <ListControls
+                    index={index}
+                    length={c.socials.length}
+                    label={`شبکه اجتماعی ${index + 1}`}
+                    onMove={(v) =>
+                      edit((d) => move(d.contact.socials, index, v))
+                    }
+                    onRemove={() =>
+                      edit((d) => {
+                        d.contact.socials.splice(index, 1);
+                      })
+                    }
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddOutlinedIcon />}
+                disabled={c.socials.length >= 20}
+                onClick={() =>
+                  edit((d) => {
+                    d.contact.socials.push({ id: newId(), label: "", url: "" });
+                  })
+                }
+              >
+                افزودن شبکه اجتماعی یا پیام‌رسان
+              </Button>
+            </fieldset>
+            <fieldset disabled={busy} className="contact-settings-section">
+              <legend>
+                <span className="homepage-settings-legend">
+                  <span>
+                    <LocationOnOutlinedIcon aria-hidden="true" />
+                  </span>{" "}
+                  نشانی فروشگاه
+                </span>
+              </legend>
+              <label>
+                نشانی فروشگاه
+                <textarea
+                  maxLength={1000}
+                  value={c.address}
+                  onChange={(e) =>
+                    edit((d) => {
+                      d.contact.address = e.target.value;
+                    })
+                  }
+                />
+              </label>
+              <label>
+                پیوند نقشه
+                <input
+                  type="url"
+                  dir="ltr"
+                  maxLength={2048}
+                  value={c.mapUrl}
+                  onChange={(e) =>
+                    edit((d) => {
+                      d.contact.mapUrl = e.target.value;
+                    })
+                  }
+                />
+              </label>
+              <p className="contact-settings-description">
+                <InfoOutlinedIcon aria-hidden="true" /> پیوند شبکه‌ها و نقشه
+                باید با https شروع شود.
+              </p>
+            </fieldset>
+          </>
+        )}
+        {(section === "faq" || section === "terms" ? [section] : []).map(
+          (section) => {
+            const label = section === "faq" ? "پرسش‌های متداول" : "قوانین";
+            const group = content[section];
+            return (
+              <fieldset
+                key={section}
+                disabled={busy}
+                className="faq-settings-section"
+              >
+                <legend>
+                  <span className="homepage-settings-legend">
+                    <span>
+                      {section === "faq" ? (
+                        <QuizOutlinedIcon aria-hidden="true" />
+                      ) : (
+                        <GavelOutlinedIcon aria-hidden="true" />
+                      )}
+                    </span>{" "}
+                    {section === "faq"
+                      ? "محتوای پرسش‌های متداول"
+                      : "محتوای قوانین و شرایط"}
+                  </span>
+                </legend>
+                <p className="faq-settings-description">
+                  {section === "faq"
+                    ? "عنوان و توضیح صفحه را وارد کنید و پرسش‌ها را به ترتیب دلخواه بچینید."
+                    : "عنوان و توضیح صفحه را وارد کنید و بندهای قوانین را به ترتیب دلخواه بچینید."}
+                </p>
+                <label>
+                  عنوان {label}
+                  <input
+                    maxLength={160}
+                    value={group.title}
+                    onChange={(e) =>
+                      edit((d) => {
+                        d[section].title = e.target.value;
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  توضیح {label}
+                  <textarea
+                    maxLength={2000}
+                    value={group.description}
+                    onChange={(e) =>
+                      edit((d) => {
+                        d[section].description = e.target.value;
+                      })
+                    }
+                  />
+                </label>
+                {group.items.map((item, index) => (
+                  <div className="content-entry" key={item.id}>
+                    <div className="faq-entry-heading">
+                      <span>
+                        {section === "faq" ? (
+                          <QuizOutlinedIcon aria-hidden="true" />
+                        ) : (
+                          <GavelOutlinedIcon aria-hidden="true" />
+                        )}
+                      </span>
+                      <strong>
+                        {section === "faq" ? "پرسش" : "بند"}{" "}
+                        {new Intl.NumberFormat("fa-IR").format(index + 1)}
+                      </strong>
+                    </div>
+                    <label>
+                      عنوان مورد {index + 1} {label}
+                      <input
+                        maxLength={250}
+                        value={item.title}
+                        onChange={(e) =>
+                          edit((d) => {
+                            d[section].items[index].title = e.target.value;
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      متن مورد {index + 1} {label}
+                      <textarea
+                        maxLength={10000}
+                        value={item.body}
+                        onChange={(e) =>
+                          edit((d) => {
+                            d[section].items[index].body = e.target.value;
+                          })
+                        }
+                      />
+                    </label>
+                    <ListControls
+                      index={index}
+                      length={group.items.length}
+                      label={`مورد ${index + 1} ${label}`}
+                      onMove={(v) =>
+                        edit((d) => move(d[section].items, index, v))
+                      }
+                      onRemove={() =>
+                        edit((d) => {
+                          d[section].items.splice(index, 1);
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outlined"
+                  startIcon={<AddOutlinedIcon />}
+                  disabled={group.items.length >= 100}
+                  onClick={() =>
+                    edit((d) => {
+                      d[section].items.push({
+                        id: newId(),
+                        title: "",
+                        body: "",
+                      });
+                    })
+                  }
+                >
+                  افزودن مورد {label}
+                </Button>
+              </fieldset>
+            );
+          },
+        )}
         {section === "about" && (
-        <fieldset disabled={busy}>
-          <legend>صفحه درباره ما</legend>
-          <label>
-            عنوان درباره ما
-            <input
-              maxLength={160}
-              value={content.about.title}
-              onChange={(e) =>
-                edit((d) => {
-                  d.about.title = e.target.value;
-                })
-              }
-            />
-          </label>
-          <label>
-            متن درباره ما
-            <textarea
+          <fieldset disabled={busy} className="homepage-settings-section">
+            <legend>
+              <span className="homepage-settings-legend">
+                <span>
+                  <InfoOutlinedIcon aria-hidden="true" />
+                </span>{" "}
+                محتوای درباره ما
+              </span>
+            </legend>
+            <p className="homepage-settings-hint">
+              عنوان، متن و تصویر معرفی فروشگاه را در این بخش ویرایش کنید.
+            </p>
+            <label>
+              عنوان درباره ما
+              <input
+                maxLength={160}
+                value={content.about.title}
+                onChange={(e) =>
+                  edit((d) => {
+                    d.about.title = e.target.value;
+                  })
+                }
+              />
+            </label>
+            <RichDescriptionEditor
+              label="متن درباره ما"
               maxLength={20000}
+              disabled={busy}
               value={content.about.body}
-              onChange={(e) =>
+              onChange={(value) =>
                 edit((d) => {
-                  d.about.body = e.target.value;
+                  d.about.body = value;
                 })
               }
             />
-          </label>
-          <p>
-            {content.about.imageId
-              ? "تصویر درباره ما انتخاب شده است."
-              : "تصویر درباره ما انتخاب نشده است."}
-          </p>
-          <Button type="button" onClick={() => setPicker({ section: "about" })}>
-            انتخاب تصویر درباره ما
-          </Button>
-          {content.about.imageId && (
-            <Button
-              type="button"
-              onClick={() =>
-                edit((d) => {
-                  d.about.imageId = null;
-                })
-              }
-            >
-              حذف تصویر درباره ما
-            </Button>
-          )}
-        </fieldset>
+            <div className="homepage-image-preview">
+              {content.about.imageId ? (
+                <Image
+                  unoptimized
+                  src={`/api/admin/media/${encodeURIComponent(content.about.imageId)}`}
+                  width={360}
+                  height={180}
+                  alt="پیش‌نمایش تصویر درباره ما"
+                />
+              ) : (
+                <span>
+                  <CollectionsOutlinedIcon aria-hidden="true" /> تصویر درباره ما
+                  انتخاب نشده است.
+                </span>
+              )}
+            </div>
+            <div className="homepage-image-actions">
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddPhotoAlternateOutlinedIcon />}
+                onClick={() => setPicker({ section: "about" })}
+              >
+                انتخاب تصویر درباره ما
+              </Button>
+              {content.about.imageId && (
+                <Button
+                  type="button"
+                  startIcon={<DeleteOutlineOutlinedIcon />}
+                  onClick={() =>
+                    edit((d) => {
+                      d.about.imageId = null;
+                    })
+                  }
+                >
+                  حذف تصویر درباره ما
+                </Button>
+              )}
+            </div>
+          </fieldset>
         )}
         <Button
           type="submit"
           variant="contained"
           size="small"
           startIcon={<SaveOutlinedIcon />}
-          disabled={busy || !dirty}
+          disabled={
+            busy ||
+            !dirty ||
+            (section === "about" && content.about.body.length > 20000)
+          }
         >
           {busy ? "در حال ذخیره…" : "ذخیره تنظیمات"}
         </Button>
@@ -698,6 +942,6 @@ export function ContentSettingsEditor({
           <Button onClick={reload}>دریافت نسخه جدید</Button>
         </DialogActions>
       </Dialog>
-    </>
+    </div>
   );
 }
