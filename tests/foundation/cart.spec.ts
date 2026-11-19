@@ -71,7 +71,9 @@ test("cart imports old draft, displays changed prices and updates quantity", asy
       .getByLabel("تعداد محصول نمونه", { exact: true })
       .getByText("۲", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(/هزینه ارسال و مبلغ نهایی/)).toBeVisible();
+  await expect(
+    page.getByText(/مبلغ نمایش‌داده‌شده بدون هزینه ارسال است/),
+  ).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "حذف محصول نمونه" }).click();
   await expect(page.getByText(/سبد خرید شما خالی است/)).toBeVisible();
@@ -176,7 +178,10 @@ test("sign-in preserves the cart and rechecks changed prices before address sele
   const login = page.getByRole("dialog", { name: "ورود یا ثبت‌نام" });
   await login.getByLabel("شماره همراه").fill("۰۹۱۲۳۴۵۶۷۸۹");
   await login.getByRole("button", { name: "دریافت کد" }).click();
-  await page.getByLabel("کد چهار رقمی").fill("۱۲۳۴");
+  await page.getByLabel("رقم 1 کد تأیید").fill("۱");
+  await page.getByLabel("رقم 2 کد تأیید").fill("۲");
+  await page.getByLabel("رقم 3 کد تأیید").fill("۳");
+  await page.getByLabel("رقم 4 کد تأیید").fill("۴");
   await page.getByRole("button", { name: "تأیید", exact: true }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "سبد تغییر کرده است" }),
