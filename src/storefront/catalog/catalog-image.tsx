@@ -5,14 +5,16 @@ export function CatalogImage({
   id,
   alt = "",
   priority = false,
+  fallback,
 }: {
   id?: string | null;
   alt?: string;
   priority?: boolean;
+  fallback?: React.ReactNode;
 }) {
   const [failedId, setFailedId] = useState<string | null>(null);
   return !id || failedId === id ? (
-    <span>تصویری موجود نیست</span>
+    (fallback ?? <span>تصویری موجود نیست</span>)
   ) : (
     <img
       src={`/api/catalog/media/${id}`}
