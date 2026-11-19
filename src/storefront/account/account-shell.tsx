@@ -2,6 +2,11 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { notifyCustomerChanged } from "@/storefront/auth/customer-name";
 export function AccountShell({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +23,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
         body: "{}",
       });
       if (!response.ok) throw new Error();
+      notifyCustomerChanged();
       try {
         sessionStorage.removeItem("lamsechi-checkout-address");
         sessionStorage.removeItem("lamsechi-delivery-quote");
@@ -31,9 +37,17 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
     }
   }
   const links = [
-    { href: "/account", label: "سفارش‌های من" },
-    { href: "/account/personal", label: "اطلاعات شخصی" },
-    { href: "/account/addresses", label: "نشانی‌های من" },
+    { href: "/account", label: "سفارش‌های من", icon: ReceiptLongIcon },
+    {
+      href: "/account/personal",
+      label: "اطلاعات شخصی",
+      icon: AccountCircleOutlinedIcon,
+    },
+    {
+      href: "/account/addresses",
+      label: "نشانی‌های من",
+      icon: LocationOnOutlinedIcon,
+    },
   ];
   return (
     <div className="profile-layout">
@@ -52,11 +66,18 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
                   : undefined
               }
             >
+              <link.icon aria-hidden="true" />
               {link.label}
             </Link>
           ))}
         </nav>
-        <button type="button" disabled={busy} onClick={() => void logout()}>
+        <button
+          className="profile-logout"
+          type="button"
+          disabled={busy}
+          onClick={() => void logout()}
+        >
+          <LogoutIcon aria-hidden="true" />
           {busy ? "در حال خروج…" : "خروج از حساب"}
         </button>
         {error && <p role="alert">{error}</p>}
