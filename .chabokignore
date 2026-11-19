@@ -1,0 +1,36 @@
+# Dependencies and generated output
+node_modules/
+node_modules_artifact_temp/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Local secrets and configuration
+.env*
+!.env.example
+*.pem
+*.key
+
+# Version control, editor files, logs and test output
+.git/
+.github/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Local design and data entry material
+design/
+assets/
+/data entry/
+figma-design-state.json
+FIGMA-*.md
+UI-UX-FIGMA-TASKS.md
+IMPLEMENTATION-TASKS.md
