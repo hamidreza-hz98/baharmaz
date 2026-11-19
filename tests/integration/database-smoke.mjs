@@ -270,7 +270,8 @@ try {
   const registered = await post(
     {
       action: "register",
-      name: "کاربر نمونه",
+      firstName: "کاربر",
+      lastName: "نمونه",
       password: "a-long-test-password",
       confirmation: "a-long-test-password",
     },
@@ -308,7 +309,12 @@ try {
     (
       await updateProfile(
         customerCookie,
-        { action: "profile", name: "نام جدید", birthdate: "۱۳۹۹/۱۲/۳۰" },
+        {
+          action: "profile",
+          firstName: "نام",
+          lastName: "جدید",
+          birthdate: "۱۳۹۹/۱۲/۳۰",
+        },
         "https://untrusted.invalid",
       )
     ).status,
@@ -318,7 +324,8 @@ try {
     (
       await updateProfile(customerCookie, {
         action: "profile",
-        name: "نام جدید",
+        firstName: "نام",
+        lastName: "جدید",
         birthdate: "۱۳۹۹/۱۲/۳۰",
       })
     ).status,
@@ -1511,7 +1518,9 @@ try {
     await fetch(adminContentUrl, { headers: { cookie: mediaCookie } })
   ).json();
   const updatedContent = adminContent.content;
-  updatedContent.homepage.slogans = [{ id: "slogan1", text: "طعم تازه بهارمز" }];
+  updatedContent.homepage.slogans = [
+    { id: "slogan1", text: "طعم تازه بهارمز" },
+  ];
   updatedContent.homepage.banners = [
     {
       id: "banner1",
@@ -2558,7 +2567,12 @@ try {
   assert.equal(
     (
       await customersPost(
-        { action: "create", name: "نمونه", mobile: "09120000555" },
+        {
+          action: "create",
+          firstName: "نمونه",
+          lastName: "تست",
+          mobile: "09120000555",
+        },
         customerCookie,
       )
     ).status,
@@ -2567,7 +2581,12 @@ try {
   assert.equal(
     (
       await customersPost(
-        { action: "create", name: "نمونه", mobile: "09120000555" },
+        {
+          action: "create",
+          firstName: "نمونه",
+          lastName: "تست",
+          mobile: "09120000555",
+        },
         mediaCookie,
         "https://evil.example",
       )
@@ -2575,13 +2594,20 @@ try {
     403,
   );
   assert.equal(
-    (await customersPost({ action: "create", name: "ن", mobile: "bad" }))
-      .status,
+    (
+      await customersPost({
+        action: "create",
+        firstName: "ن",
+        lastName: "تست",
+        mobile: "bad",
+      })
+    ).status,
     400,
   );
   const created = await customersPost({
     action: "create",
-    name: "مشتری مدیریتی",
+    firstName: "مشتری",
+    lastName: "مدیریتی",
     mobile: "۰۹۱۲۰۰۰۰۵۵۵",
   });
   assert.equal(created.status, 201);
@@ -2590,7 +2616,8 @@ try {
     (
       await customersPost({
         action: "create",
-        name: "مشتری تکراری",
+        firstName: "مشتری",
+        lastName: "تکراری",
         mobile: "+98 912 000 0555",
       })
     ).status,
@@ -2621,7 +2648,8 @@ try {
       await customersPost({
         action: "update",
         id: managedId,
-        name: "نام ویرایش شده",
+        firstName: "نام",
+        lastName: "ویرایش شده",
         mobile: "۰۹۱۲۰۰۰۰۵۵۵",
         expectedMobile: managedRow.mobile,
       })
@@ -2637,7 +2665,8 @@ try {
       await customersPost({
         action: "update",
         id: managedId,
-        name: "نام ویرایش شده",
+        firstName: "نام",
+        lastName: "ویرایش شده",
         mobile: "09120000556",
         expectedMobile: managedRow.mobile,
       })
@@ -2653,7 +2682,8 @@ try {
       await customersPost({
         action: "update",
         id: managedId,
-        name: "نام قدیمی",
+        firstName: "نام",
+        lastName: "قدیمی",
         mobile: "09120000557",
         expectedMobile: managedRow.mobile,
       })
