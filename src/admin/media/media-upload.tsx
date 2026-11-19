@@ -3,6 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, LinearProgress, Typography } from "@mui/material";
 import ImageNotSupportedOutlinedIcon from "@mui/icons-material/ImageNotSupportedOutlined";
 import MovieOutlinedIcon from "@mui/icons-material/MovieOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 
 function UploadPreview({ file }: { file: File }) {
   const [source, setSource] = useState<string | null>(null);
@@ -193,8 +198,9 @@ export function MediaUpload({
     }
   }
   return (
-    <Box>
+    <Box className="media-upload-content">
       <Box
+        className="media-upload-dropzone"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
@@ -208,7 +214,10 @@ export function MediaUpload({
           textAlign: "center",
         }}
       >
-        <Typography>
+        <span className="media-upload-drop-icon">
+          <CloudUploadOutlinedIcon aria-hidden="true" />
+        </span>
+        <Typography className="media-upload-drop-title">
           فایل‌ها را اینجا رها کنید یا از دستگاه انتخاب کنید.
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -237,7 +246,8 @@ export function MediaUpload({
         />
         <Button
           onClick={() => input.current?.click()}
-          variant="outlined"
+          variant="contained"
+          startIcon={<AddPhotoAlternateOutlinedIcon />}
           sx={{ mt: 1 }}
         >
           انتخاب فایل
@@ -249,13 +259,26 @@ export function MediaUpload({
         </Typography>
       )}
       {entries.length === 0 ? (
-        <Typography sx={{ mt: 2 }}>هنوز فایلی انتخاب نشده است.</Typography>
+        <div className="media-upload-empty">
+          <UploadFileOutlinedIcon aria-hidden="true" />
+          <div>
+            <strong>فایلی در صف بارگذاری نیست</strong>
+            <Typography variant="body2">
+              فایل‌های انتخاب‌شده اینجا نمایش داده می‌شوند.
+            </Typography>
+          </div>
+        </div>
       ) : (
-        <Box component="ul" sx={{ listStyle: "none", p: 0 }}>
+        <Box
+          component="ul"
+          className="media-upload-list"
+          sx={{ listStyle: "none", p: 0 }}
+        >
           {entries.map((entry) => (
             <Box
               component="li"
               key={entry.id}
+              className={`media-upload-item is-${entry.status}`}
               sx={{ borderBottom: "1px solid", borderColor: "divider", py: 2 }}
             >
               <UploadPreview file={entry.file} />
@@ -288,7 +311,8 @@ export function MediaUpload({
                 </>
               )}
               {entry.status === "complete" && (
-                <Typography role="status">
+                <Typography role="status" className="media-upload-success">
+                  <CheckCircleOutlineOutlinedIcon aria-hidden="true" />
                   بارگذاری و ذخیره انجام شد.
                 </Typography>
               )}
@@ -301,6 +325,7 @@ export function MediaUpload({
                 entry.status === "failed" ||
                 entry.status === "cancelled") && (
                 <Button
+                  startIcon={<CloudUploadOutlinedIcon />}
                   aria-label={`${entry.status === "ready" ? "بارگذاری" : "تلاش دوباره"} ${entry.file.name}`}
                   disabled={active}
                   onClick={() => start(entry)}
@@ -317,6 +342,7 @@ export function MediaUpload({
                 </Button>
               ) : (
                 <Button
+                  startIcon={<DeleteOutlineOutlinedIcon />}
                   aria-label={`حذف ${entry.file.name} از صف`}
                   disabled={active}
                   onClick={() =>
