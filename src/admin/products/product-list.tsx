@@ -3,6 +3,14 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import RemoveShoppingCartOutlinedIcon from "@mui/icons-material/RemoveShoppingCartOutlined";
+import StarBorderOutlinedIcon from "@mui/icons-material/StarBorderOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterAltOffOutlinedIcon from "@mui/icons-material/FilterAltOffOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,6 +24,7 @@ import {
   DialogTitle,
   FormControl,
   InputLabel,
+  InputAdornment,
   MenuItem,
   Select,
   Table,
@@ -54,7 +63,7 @@ function Thumbnail({ item }: { item: ProductItem }) {
       height={64}
       alt={`تصویر ${item.title}`}
       onError={() => setFailed(true)}
-      style={{ objectFit: "contain" }}
+      className="admin-product-thumbnail"
     />
   ) : (
     <Box
@@ -66,9 +75,27 @@ function Thumbnail({ item }: { item: ProductItem }) {
         placeItems: "center",
       }}
       aria-label="تصویر موجود نیست"
+      className="admin-product-thumbnail"
     >
-      —
+      <ImageOutlinedIcon aria-hidden="true" />
     </Box>
+  );
+}
+function ProductStatus({ item }: { item: ProductItem }) {
+  return (
+    <span className="admin-product-statuses">
+      <span
+        className={`admin-product-status ${item.available ? "is-available" : "is-unavailable"}`}
+      >
+        <span aria-hidden="true" />
+        {item.available ? "موجود" : "ناموجود"}
+      </span>
+      {item.promoted && (
+        <span className="admin-product-status is-promoted">
+          <StarBorderOutlinedIcon aria-hidden="true" /> پیشنهادی
+        </span>
+      )}
+    </span>
   );
 }
 function ProductPrice({ item }: { item: ProductItem }) {
@@ -227,7 +254,10 @@ export function ProductList() {
   }
   function actions(item: ProductItem) {
     return (
-      <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+      <Box
+        className="admin-product-actions"
+        sx={{ display: "flex", flexWrap: "wrap" }}
+      >
         <Button
           component={Link}
           startIcon={<EditOutlinedIcon />}
@@ -238,6 +268,7 @@ export function ProductList() {
         </Button>
         <Button
           onClick={() => openPrice(item)}
+          startIcon={<SellOutlinedIcon />}
           aria-label={`ویرایش قیمت ${item.title}`}
         >
           قیمت
@@ -256,20 +287,19 @@ export function ProductList() {
     );
   }
   return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 2,
-          flexWrap: "wrap",
-          mb: 2,
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          محصولات
-        </Typography>
+    <Box className="admin-products-page">
+      <Box className="admin-products-heading">
+        <div className="admin-products-title">
+          <span className="admin-products-heading-icon">
+            <Inventory2OutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <Typography component="h1" variant="h5">
+              محصولات
+            </Typography>
+            <p>مدیریت محصولات و موجودی فروشگاه</p>
+          </div>
+        </div>
         <Button
           component={Link}
           href="/admin/products/new"
@@ -281,187 +311,248 @@ export function ProductList() {
         </Button>
       </Box>
       {result && (
-        <Typography sx={{ mb: 2 }}>
-          کل: {new Intl.NumberFormat("fa-IR").format(result.counts.all)} ·
-          موجود:{" "}
-          {new Intl.NumberFormat("fa-IR").format(result.counts.available)} ·
-          ناموجود:{" "}
-          {new Intl.NumberFormat("fa-IR").format(result.counts.unavailable)} ·
-          پیشنهادی:{" "}
-          {new Intl.NumberFormat("fa-IR").format(result.counts.promoted)}
-        </Typography>
-      )}
-      <Box
-        component="form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          change(draft, availability, promotion, 1);
-        }}
-        sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
-      >
-        <TextField
-          label="جست‌وجوی محصول"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          slotProps={{ htmlInput: { maxLength: 80 } }}
-          sx={{ maxWidth: 260 }}
-        />
-        <Button type="submit">جست‌وجو</Button>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="product-availability-label">موجودی</InputLabel>
-          <Select
-            labelId="product-availability-label"
-            label="موجودی"
-            value={availability}
-            onChange={(event) =>
-              change(query, event.target.value, promotion, 1)
-            }
-          >
-            <MenuItem value="all">همه</MenuItem>
-            <MenuItem value="available">موجود</MenuItem>
-            <MenuItem value="unavailable">ناموجود</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel id="product-promotion-label">پیشنهادی</InputLabel>
-          <Select
-            labelId="product-promotion-label"
-            label="پیشنهادی"
-            value={promotion}
-            onChange={(event) =>
-              change(query, availability, event.target.value, 1)
-            }
-          >
-            <MenuItem value="all">همه</MenuItem>
-            <MenuItem value="promoted">پیشنهادی</MenuItem>
-            <MenuItem value="not-promoted">عادی</MenuItem>
-          </Select>
-        </FormControl>
-        <Button
-          onClick={() => {
-            setDraft("");
-            change("", "all", "all", 1);
-          }}
-        >
-          پاک‌کردن
-        </Button>
-      </Box>
-      {loading ? (
-        <Typography role="status">در حال دریافت محصولات…</Typography>
-      ) : error ? (
-        <Alert
-          severity="error"
-          action={<Button onClick={refresh}>تلاش دوباره</Button>}
-        >
-          {error}
-        </Alert>
-      ) : !result?.items.length ? (
-        <Typography>
-          {query || availability !== "all" || promotion !== "all"
-            ? "محصولی با این فیلتر پیدا نشد."
-            : "هنوز محصولی ثبت نشده است."}
-        </Typography>
-      ) : (
-        <>
-          <TableContainer
-            component={Box}
-            role="region"
-            aria-label="جدول محصولات؛ قابل پیمایش افقی"
-            tabIndex={0}
-            sx={{ display: { xs: "none", md: "block" }, overflowX: "auto" }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>محصول</TableCell>
-                  <TableCell>دسته‌بندی</TableCell>
-                  <TableCell>قیمت</TableCell>
-                  <TableCell>وضعیت</TableCell>
-                  <TableCell>تاریخ ایجاد</TableCell>
-                  <TableCell>عملیات</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {result.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Thumbnail item={item} />
-                        <Typography>{item.title}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      {item.category?.name ?? "دسته‌بندی ناموجود"}
-                    </TableCell>
-                    <TableCell>
-                      <ProductPrice item={item} />
-                    </TableCell>
-                    <TableCell>
-                      {item.available ? "موجود" : "ناموجود"}
-                      {item.promoted ? " · پیشنهادی" : ""}
-                    </TableCell>
-                    <TableCell>{formatTehranJalali(item.createdAt)}</TableCell>
-                    <TableCell>{actions(item)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <Box sx={{ display: { xs: "grid", md: "none" }, gap: 2 }}>
-            {result.items.map((item) => (
-              <Box
-                key={item.id}
-                component="article"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 2,
-                  p: 2,
-                }}
+        <div className="admin-product-stats">
+          {[
+            {
+              label: "کل محصولات",
+              count: result.counts.all,
+              icon: <Inventory2OutlinedIcon />,
+              style: "all",
+            },
+            {
+              label: "موجود",
+              count: result.counts.available,
+              icon: <CheckCircleOutlineOutlinedIcon />,
+              style: "available",
+            },
+            {
+              label: "ناموجود",
+              count: result.counts.unavailable,
+              icon: <RemoveShoppingCartOutlinedIcon />,
+              style: "unavailable",
+            },
+            {
+              label: "پیشنهادی",
+              count: result.counts.promoted,
+              icon: <StarBorderOutlinedIcon />,
+              style: "promoted",
+            },
+          ].map((stat) => (
+            <div className="admin-product-stat" key={stat.style}>
+              <span
+                className={`admin-product-stat-icon is-${stat.style}`}
+                aria-hidden="true"
               >
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                  <Thumbnail item={item} />
-                  <Typography component="h2" variant="h6">
-                    {item.title}
-                  </Typography>
-                </Box>
-                <Typography>
-                  {item.category?.name ?? "دسته‌بندی ناموجود"}
-                </Typography>
-                <ProductPrice item={item} />
-                <Typography>
-                  {item.available ? "موجود" : "ناموجود"}
-                  {item.promoted ? " · پیشنهادی" : ""}
-                </Typography>
-                <Typography variant="body2">
-                  {formatTehranJalali(item.createdAt)}
-                </Typography>
-                {actions(item)}
-              </Box>
-            ))}
-          </Box>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 2 }}>
-            <Button
-              disabled={page <= 1}
-              onClick={() => change(query, availability, promotion, page - 1)}
-            >
-              صفحه قبل
-            </Button>
-            <Typography>
-              صفحه {new Intl.NumberFormat("fa-IR").format(page)} ·{" "}
-              {new Intl.NumberFormat("fa-IR").format(result.total)} نتیجه
-            </Typography>
-            <Button
-              disabled={page * result.limit >= result.total}
-              onClick={() => change(query, availability, promotion, page + 1)}
-            >
-              صفحه بعد
-            </Button>
-          </Box>
-        </>
+                {stat.icon}
+              </span>
+              <div>
+                <span>{stat.label}</span>
+                <strong>
+                  {new Intl.NumberFormat("fa-IR").format(stat.count)}
+                </strong>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+      <div className="admin-products-panel">
+        <div className="admin-products-panel-title">
+          <span>
+            <Inventory2OutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h2>فهرست محصولات</h2>
+            <p>جست‌وجو و مدیریت محصولات فروشگاه</p>
+          </div>
+        </div>
+        <Box
+          component="form"
+          className="admin-products-filters"
+          onSubmit={(event) => {
+            event.preventDefault();
+            change(draft, availability, promotion, 1);
+          }}
+          sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
+        >
+          <TextField
+            label="جست‌وجوی محصول"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            slotProps={{
+              htmlInput: { maxLength: 80 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ maxWidth: 260 }}
+          />
+          <Button type="submit" variant="outlined" startIcon={<SearchIcon />}>
+            جست‌وجو
+          </Button>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel id="product-availability-label">موجودی</InputLabel>
+            <Select
+              labelId="product-availability-label"
+              label="موجودی"
+              value={availability}
+              onChange={(event) =>
+                change(query, event.target.value, promotion, 1)
+              }
+            >
+              <MenuItem value="all">همه</MenuItem>
+              <MenuItem value="available">موجود</MenuItem>
+              <MenuItem value="unavailable">ناموجود</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel id="product-promotion-label">پیشنهادی</InputLabel>
+            <Select
+              labelId="product-promotion-label"
+              label="پیشنهادی"
+              value={promotion}
+              onChange={(event) =>
+                change(query, availability, event.target.value, 1)
+              }
+            >
+              <MenuItem value="all">همه</MenuItem>
+              <MenuItem value="promoted">پیشنهادی</MenuItem>
+              <MenuItem value="not-promoted">عادی</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            startIcon={<FilterAltOffOutlinedIcon />}
+            onClick={() => {
+              setDraft("");
+              change("", "all", "all", 1);
+            }}
+          >
+            پاک‌کردن
+          </Button>
+        </Box>
+        {loading ? (
+          <Typography role="status">در حال دریافت محصولات…</Typography>
+        ) : error ? (
+          <Alert
+            severity="error"
+            action={<Button onClick={refresh}>تلاش دوباره</Button>}
+          >
+            {error}
+          </Alert>
+        ) : !result?.items.length ? (
+          <Typography className="admin-products-empty">
+            {query || availability !== "all" || promotion !== "all"
+              ? "محصولی با این فیلتر پیدا نشد."
+              : "هنوز محصولی ثبت نشده است."}
+          </Typography>
+        ) : (
+          <>
+            <TableContainer
+              component={Box}
+              role="region"
+              aria-label="جدول محصولات؛ قابل پیمایش افقی"
+              className="admin-products-table"
+              tabIndex={0}
+              sx={{ display: { xs: "none", md: "block" }, overflowX: "auto" }}
+            >
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>محصول</TableCell>
+                    <TableCell>دسته‌بندی</TableCell>
+                    <TableCell>قیمت</TableCell>
+                    <TableCell>وضعیت</TableCell>
+                    <TableCell>تاریخ ایجاد</TableCell>
+                    <TableCell>عملیات</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {result.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Thumbnail item={item} />
+                          <Typography>{item.title}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        {item.category?.name ?? "دسته‌بندی ناموجود"}
+                      </TableCell>
+                      <TableCell>
+                        <ProductPrice item={item} />
+                      </TableCell>
+                      <TableCell>
+                        <ProductStatus item={item} />
+                      </TableCell>
+                      <TableCell>
+                        {formatTehranJalali(item.createdAt)}
+                      </TableCell>
+                      <TableCell>{actions(item)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box
+              className="admin-products-mobile"
+              sx={{ display: { xs: "grid", md: "none" }, gap: 2 }}
+            >
+              {result.items.map((item) => (
+                <Box
+                  key={item.id}
+                  component="article"
+                  className="admin-product-mobile-card"
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <Thumbnail item={item} />
+                    <Typography component="h2" variant="h6">
+                      {item.title}
+                    </Typography>
+                  </Box>
+                  <Typography>
+                    {item.category?.name ?? "دسته‌بندی ناموجود"}
+                  </Typography>
+                  <ProductPrice item={item} />
+                  <ProductStatus item={item} />
+                  <Typography variant="body2">
+                    {formatTehranJalali(item.createdAt)}
+                  </Typography>
+                  {actions(item)}
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 2 }}>
+              <Button
+                disabled={page <= 1}
+                onClick={() => change(query, availability, promotion, page - 1)}
+              >
+                صفحه قبل
+              </Button>
+              <Typography>
+                صفحه {new Intl.NumberFormat("fa-IR").format(page)} ·{" "}
+                {new Intl.NumberFormat("fa-IR").format(result.total)} نتیجه
+              </Typography>
+              <Button
+                disabled={page * result.limit >= result.total}
+                onClick={() => change(query, availability, promotion, page + 1)}
+              >
+                صفحه بعد
+              </Button>
+            </Box>
+          </>
+        )}
+      </div>
       <Dialog
         open={Boolean(pricing)}
         onClose={() => {
