@@ -22,7 +22,6 @@ test("address handoff chooses a customer address and preserves selection on refr
   );
   await page.goto("/checkout-test-probe");
   await page.getByRole("radio", { name: /خانه/ }).check();
-  await page.getByRole("button", { name: "تأیید نشانی" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "نشانی انتخاب شد" }),
   ).toBeVisible();
@@ -60,10 +59,9 @@ test("a deleted address cannot be confirmed from an old list", async ({
   });
   await page.goto("/checkout-test-probe");
   await page.getByRole("radio", { name: /خانه/ }).check();
-  await page.getByRole("button", { name: "تأیید نشانی" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "نشانی دیگر در دسترس نیست",
-  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "نشانی دیگر در دسترس نیست" }),
+  ).toContainText("نشانی دیگر در دسترس نیست");
   expect(
     await page.evaluate(() =>
       sessionStorage.getItem("lamsechi-checkout-address"),
@@ -74,6 +72,15 @@ test("a deleted address cannot be confirmed from an old list", async ({
 test("delivery quote shows server totals and rejects a changed quote", async ({
   page,
 }) => {
+  await page.route("**/api/cart", (route) =>
+    route.fulfill({
+      json: {
+        subtotalRials: 1000000,
+        discountRials: 0,
+        itemsTotalRials: 1000000,
+      },
+    }),
+  );
   await page.route("**/api/addresses", (route) =>
     route.fulfill({
       json: {
@@ -133,19 +140,22 @@ test("delivery quote shows server totals and rejects a changed quote", async ({
     });
   });
   await page.goto("/checkout-test-probe");
+  const summary = page.getByRole("region", { name: "خلاصه سبد خرید" });
+  await expect(summary.locator(".price-total")).toContainText("۱۰۰,۰۰۰ تومان");
+  await expect(summary).toContainText("بدون هزینه ارسال");
+  await expect(summary.getByText("جمع پس از تخفیف")).toHaveCount(0);
   await page.getByRole("radio", { name: /خانه/ }).check();
-  await page.getByRole("button", { name: "تأیید نشانی" }).click();
-  await page.getByLabel("تاریخ تحویل (هجری شمسی)").selectOption("1404/01/01");
+  await page.getByLabel("تاریخ تحویل (هجری شمسی)").click();
+  await page.getByRole("option", { name: "جمعه ۱ فروردین" }).click();
   await page.getByRole("radio", { name: /صبح/ }).check();
-  await page.getByRole("button", { name: "محاسبه هزینه ارسال" }).click();
-  await expect(page.getByText(/مبلغ نهایی: ۱۴۵,۰۰۰ تومان/)).toBeVisible();
-  await page.getByRole("button", { name: "بررسی دوباره پیش‌فاکتور" }).click();
+  await expect(page.getByText("۱۴۵,۰۰۰ تومان")).toBeVisible();
+  await page.getByRole("button", { name: "مرحله بعد" }).click();
   await expect(
     page
       .getByRole("alert")
       .filter({ hasText: "سبد یا شرایط ارسال تغییر کرده" }),
   ).toBeVisible();
-  await expect(page.getByText(/مبلغ نهایی:/)).toBeHidden();
+  await expect(page.getByRole("button", { name: "مرحله بعد" })).toBeDisabled();
 });
 
 test("delivery shows out-of-area and no-slots states", async ({ page }) => {
@@ -177,12 +187,11 @@ test("delivery shows out-of-area and no-slots states", async ({ page }) => {
   );
   await page.goto("/checkout-test-probe");
   await page.getByRole("radio", { name: /خانه/ }).check();
-  await page.getByRole("button", { name: "تأیید نشانی" }).click();
   await expect(
     page.getByText("این نشانی خارج از محدوده ارسال است."),
   ).toBeVisible();
   outside = false;
-  await page.getByRole("button", { name: "تأیید نشانی" }).click();
+  await page.getByRole("button", { name: "بررسی دوباره" }).click();
   await expect(
     page.getByText("در حال حاضر زمان تحویلی در دسترس نیست."),
   ).toBeVisible();
