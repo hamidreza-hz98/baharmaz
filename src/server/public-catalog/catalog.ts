@@ -63,16 +63,38 @@ export async function homeCatalog() {
 }
 export async function categories() {
   await connectDatabase();
-  const list = await Category.find({ deletedAt: null })
-    .select("name slug parentId")
-    .sort({ name: 1, _id: 1 })
-    .limit(5000)
-    .lean();
-  return list.map((x) => ({
+  const [list, order] = await Promise.all([
+    Category.find({ deletedAt: null })
+      .select("name slug parentId imageId iconId")
+      .sort({ createdAt: 1, _id: 1 })
+      .limit(5000)
+      .lean(),
+    CategoryOrder.findById("homepage").lean(),
+  ]);
+  const byId = new Map(list.map((item) => [String(item._id), item]));
+  const rank = new Map<string, number>(
+    ((order?.ids ?? []) as string[]).map((id, index) => [String(id), index]),
+  );
+  const ordered = [...list].sort(
+    (a, b) =>
+      (rank.get(String(a._id)) ?? Number.MAX_SAFE_INTEGER) -
+      (rank.get(String(b._id)) ?? Number.MAX_SAFE_INTEGER),
+  );
+  const roots = ordered.filter((item) => !item.parentId);
+  const result = roots.flatMap((root) => [
+    root,
+    ...ordered.filter((item) => item.parentId === String(root._id)),
+  ]);
+  for (const item of ordered)
+    if (!result.includes(item) && !byId.has(String(item.parentId)))
+      result.push(item);
+  return result.map((x) => ({
     id: String(x._id),
     name: x.name as string,
     slug: x.slug as string,
     parentId: (x.parentId as string | null) ?? null,
+    imageId: (x.imageId as string | null) ?? null,
+    iconId: (x.iconId as string | null) ?? null,
   }));
 }
 export async function categoryBySlug(slug: string) {
@@ -111,7 +133,7 @@ export async function productBySlug(slug: string) {
       .select("name slug")
       .lean(),
     Ingredient.find({ _id: { $in: p.ingredientIds }, deletedAt: null })
-      .select("name")
+      .select("name iconId")
       .lean(),
   ]);
   if (!category) return null;
@@ -121,7 +143,10 @@ export async function productBySlug(slug: string) {
     description: p.description as string,
     gallery: p.gallery as string[],
     category: { name: category.name as string, slug: category.slug as string },
-    ingredients: ingredients.map((i) => i.name as string),
+    ingredients: ingredients.map((i) => ({
+      name: i.name as string,
+      iconId: (i.iconId as string | null) ?? null,
+    })),
   };
 }
 export async function listPublicProducts(input: {
