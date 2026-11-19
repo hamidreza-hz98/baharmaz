@@ -1,6 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeRichDescription } from "../src/server/products/rich-description.ts";
+import { validateContentSection } from "../src/server/content/settings.ts";
+
+test("about settings preserve plain text and sanitize formatted content", () => {
+  const plain = validateContentSection("about", {
+    title: "درباره ما",
+    body: "متن قدیمی\nخط دوم",
+    imageId: null,
+  });
+  assert.equal(plain.body, "متن قدیمی\nخط دوم");
+  const rich = validateContentSection("about", {
+    title: "درباره ما",
+    body: 'rich:v1:<p><strong>متن</strong><script>alert(1)</script><a href="javascript:alert(1)">پیوند</a></p>',
+    imageId: null,
+  });
+  assert.match(rich.body, /<strong>متن<\/strong>/);
+  assert.doesNotMatch(rich.body, /script|javascript/);
+});
 
 test("rich descriptions retain supported formatting and remove unsafe markup", () => {
   const input =
