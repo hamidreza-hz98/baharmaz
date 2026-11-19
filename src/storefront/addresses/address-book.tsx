@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   TextField,
   Typography,
@@ -23,16 +24,26 @@ const blank = {
   mobile: "",
   address: "",
 };
-export function AddressBook() {
+export function AddressBook({
+  createOnly = false,
+  onClose,
+  onCreated,
+}: {
+  createOnly?: boolean;
+  onClose?: () => void;
+  onCreated?: (item: AddressItem | null) => void | Promise<void>;
+} = {}) {
   const [items, setItems] = useState<AddressItem[] | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [edit, setEdit] = useState<AddressItem | null | undefined>(undefined);
+  const [edit, setEdit] = useState<AddressItem | null | undefined>(
+    createOnly ? null : undefined,
+  );
   const [form, setForm] = useState(blank);
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [removeItem, setRemoveItem] = useState<AddressItem | null>(null);
   const [config, setConfig] = useState<MapConfig>({ enabled: false });
   const [reverse, setReverse] = useState(false);
   async function load() {
@@ -86,7 +97,6 @@ export function AddressBook() {
     );
     setLat(item?.coordinates ? String(item.coordinates.lat) : "");
     setLng(item?.coordinates ? String(item.coordinates.lng) : "");
-    setShowMap(false);
     setMessage("");
   }
   function coords(): Coordinates | null {
@@ -138,7 +148,10 @@ export function AddressBook() {
         return;
       }
       setEdit(undefined);
-      await load();
+      if (createOnly) {
+        await onCreated?.(data.item ?? null);
+        onClose?.();
+      } else await load();
       setMessage(action === "delete" ? "نشانی حذف شد." : "نشانی ذخیره شد.");
     } catch {
       setMessage("اطلاعات یا مختصات را بررسی کنید و دوباره تلاش کنید.");
@@ -187,74 +200,111 @@ export function AddressBook() {
   }
   return (
     <>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 2,
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          نشانی‌های من
-        </Typography>
-        <Button variant="contained" onClick={() => open(null)}>
-          افزودن نشانی
-        </Button>
-      </Box>
-      {message && edit === undefined && (
-        <Alert sx={{ mt: 2 }} severity="info" role="status">
-          {message}
-        </Alert>
-      )}
-      {loadError && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          دریافت نشانی‌ها ممکن نشد.{" "}
-          <Button onClick={() => void load()}>تلاش دوباره</Button>
-        </Alert>
-      )}
-      {!items && !loadError && <p role="status">در حال دریافت نشانی‌ها…</p>}
-      {items?.length === 0 && <p>هنوز نشانی‌ای ثبت نکرده‌اید.</p>}
-      <Box sx={{ display: "grid", gap: 2, mt: 2 }}>
-        {items?.map((item) => (
+      {!createOnly && (
+        <>
           <Box
-            key={item.id}
             sx={{
-              p: 2,
-              border: "1px solid #e8ddd6",
-              borderRadius: 2,
-              bgcolor: "white",
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 2,
+              alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            <strong>{item.label}</strong>
-            <p>{item.address}</p>
-            <p>
-              {item.recipient} · <bdi dir="ltr">{item.mobile}</bdi>
-            </p>
-            <Button
-              onClick={() => open(item)}
-              aria-label={`ویرایش ${item.label}`}
-            >
-              ویرایش
-            </Button>
-            <Button
-              disabled={busy}
-              onClick={() => {
-                if (window.confirm("این نشانی حذف شود؟"))
-                  void send("delete", item);
-              }}
-              aria-label={`حذف ${item.label}`}
-            >
-              حذف
+            <Typography component="h1" variant="h5">
+              نشانی‌های من
+            </Typography>
+            <Button variant="contained" onClick={() => open(null)}>
+              افزودن نشانی
             </Button>
           </Box>
-        ))}
-      </Box>
+          {message && edit === undefined && (
+            <Alert sx={{ mt: 2 }} severity="info" role="status">
+              {message}
+            </Alert>
+          )}
+          {loadError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              دریافت نشانی‌ها ممکن نشد.{" "}
+              <Button onClick={() => void load()}>تلاش دوباره</Button>
+            </Alert>
+          )}
+          {!items && !loadError && <p role="status">در حال دریافت نشانی‌ها…</p>}
+          {items?.length === 0 && <p>هنوز نشانی‌ای ثبت نکرده‌اید.</p>}
+          <Box sx={{ display: "grid", gap: 2, mt: 2 }}>
+            {items?.map((item) => (
+              <Box
+                key={item.id}
+                sx={{
+                  p: 2,
+                  border: "1px solid #e8ddd6",
+                  borderRadius: 2,
+                  bgcolor: "white",
+                }}
+              >
+                <strong>{item.label}</strong>
+                <p>{item.address}</p>
+                <p>
+                  {item.recipient} · <bdi dir="ltr">{item.mobile}</bdi>
+                </p>
+                <Button
+                  onClick={() => open(item)}
+                  aria-label={`ویرایش ${item.label}`}
+                >
+                  ویرایش
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() => setRemoveItem(item)}
+                  aria-label={`حذف ${item.label}`}
+                >
+                  حذف
+                </Button>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
+      <Dialog
+        open={removeItem !== null}
+        onClose={() => {
+          if (!busy) setRemoveItem(null);
+        }}
+        aria-labelledby="address-remove-title"
+        aria-describedby="address-remove-description"
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle id="address-remove-title">حذف نشانی</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="address-remove-description">
+            آیا می‌خواهید نشانی «{removeItem?.label}» را حذف کنید؟
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button onClick={() => setRemoveItem(null)} disabled={busy} autoFocus>
+            انصراف
+          </Button>
+          <Button
+            variant="contained"
+            disabled={busy}
+            onClick={() => {
+              if (!removeItem || busy) return;
+              void send("delete", removeItem);
+              setRemoveItem(null);
+            }}
+          >
+            حذف نشانی
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={edit !== undefined}
         onClose={() => {
-          if (!busy) setEdit(undefined);
+          if (!busy) {
+            setEdit(undefined);
+            onClose?.();
+          }
         }}
         fullWidth
         maxWidth="md"
@@ -319,33 +369,9 @@ export function AddressBook() {
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
             <Typography variant="body2">
-              مختصات اختیاری است؛ می‌توانید آن را دستی وارد کنید. نمایش نقشه
-              اطلاعات اتصال شما را به ارائه‌دهنده نقشه ارسال می‌کند.
+              موقعیت نشانی را روی نقشه انتخاب کنید.
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <TextField
-                label="عرض جغرافیایی"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                slotProps={{ htmlInput: { dir: "ltr", inputMode: "decimal" } }}
-              />
-              <TextField
-                label="طول جغرافیایی"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                slotProps={{ htmlInput: { dir: "ltr", inputMode: "decimal" } }}
-              />
-            </Box>
             {config.enabled ? (
-              <Button type="button" onClick={() => setShowMap(!showMap)}>
-                {showMap ? "بستن نقشه" : "نمایش نقشه"}
-              </Button>
-            ) : (
-              <Typography variant="body2">
-                نقشه پیکربندی نشده است؛ نشانی و مختصات را دستی وارد کنید.
-              </Typography>
-            )}
-            {showMap && config.enabled && (
               <AddressMap
                 config={config}
                 coordinates={point}
@@ -354,7 +380,37 @@ export function AddressBook() {
                   setLng(String(p.lng));
                 }}
               />
+            ) : (
+              <Typography variant="body2">
+                نقشه در دسترس نیست؛ مختصات را دستی وارد کنید.
+              </Typography>
             )}
+            <Box component="details">
+              <Box
+                component="summary"
+                sx={{ cursor: "pointer", color: "primary.main", mb: 1 }}
+              >
+                ورود دستی مختصات
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <TextField
+                  label="عرض جغرافیایی"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  slotProps={{
+                    htmlInput: { dir: "ltr", inputMode: "decimal" },
+                  }}
+                />
+                <TextField
+                  label="طول جغرافیایی"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  slotProps={{
+                    htmlInput: { dir: "ltr", inputMode: "decimal" },
+                  }}
+                />
+              </Box>
+            </Box>
             {reverse && (
               <Box>
                 <Typography variant="body2">
@@ -373,7 +429,13 @@ export function AddressBook() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button disabled={busy} onClick={() => setEdit(undefined)}>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setEdit(undefined);
+              onClose?.();
+            }}
+          >
             انصراف
           </Button>
           <Button
