@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { MenuItem, Select } from "@mui/material";
 import type { PublicCard } from "@/shared/public-catalog";
 import { ProductCard } from "./product-card";
 
@@ -10,6 +11,20 @@ type Category = {
   parentId?: string | null;
 };
 type Result = { items: PublicCard[]; total: number; nextCursor: string | null };
+const filterMenuProps = {
+  slotProps: {
+    paper: {
+      className: "delivery-date-menu",
+      sx: {
+        maxHeight: 320,
+        mt: 0.75,
+        borderRadius: 2.5,
+        border: "1px solid #eadfd8",
+        boxShadow: "0 12px 32px rgb(62 35 29 / 16%)",
+      },
+    },
+  },
+};
 export function CatalogList({
   categories,
   initialCategory = "",
@@ -108,9 +123,14 @@ export function CatalogList({
   return (
     <>
       <div className="catalog-controls">
-        <label>
-          دسته‌بندی{" "}
-          <select
+        <div className="catalog-control">
+          <span id="catalog-category-label">دسته‌بندی</span>
+          <Select
+            labelId="catalog-category-label"
+            className="catalog-filter-select"
+            size="small"
+            displayEmpty
+            MenuProps={filterMenuProps}
             value={category}
             onChange={(e) => {
               const value = e.target.value;
@@ -124,7 +144,7 @@ export function CatalogList({
               } else setCategory(value);
             }}
           >
-            <option value="">همه دسته‌بندی‌ها</option>
+            <MenuItem value="">همه دسته‌بندی‌ها</MenuItem>
             {categories
               .filter((c) => !c.parentId)
               .flatMap((parent) => [
@@ -132,20 +152,27 @@ export function CatalogList({
                 ...categories.filter((c) => c.parentId === parent.id),
               ])
               .map((c) => (
-                <option key={c.id} value={c.id}>
+                <MenuItem key={c.id} value={c.id}>
                   {c.parentId ? `↳ ${c.name}` : c.name}
-                </option>
+                </MenuItem>
               ))}
-          </select>
-        </label>
-        <label>
-          مرتب‌سازی{" "}
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="newest">جدیدترین</option>
-            <option value="cheapest">کمترین قیمت</option>
-            <option value="expensive">بیشترین قیمت</option>
-          </select>
-        </label>
+          </Select>
+        </div>
+        <div className="catalog-control">
+          <span id="catalog-sort-label">مرتب‌سازی</span>
+          <Select
+            labelId="catalog-sort-label"
+            className="catalog-filter-select"
+            size="small"
+            MenuProps={filterMenuProps}
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
+            <MenuItem value="newest">جدیدترین</MenuItem>
+            <MenuItem value="cheapest">کمترین قیمت</MenuItem>
+            <MenuItem value="expensive">بیشترین قیمت</MenuItem>
+          </Select>
+        </div>
       </div>
       <p aria-live="polite">
         {started && !error
