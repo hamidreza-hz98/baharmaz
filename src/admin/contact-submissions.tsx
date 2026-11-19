@@ -1,12 +1,19 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   TextField,
 } from "@mui/material";
 import { formatTehranJalali } from "@/shared/locale";
@@ -50,7 +57,11 @@ function MessageDialog({ id, close }: { id: string; close: () => void }) {
       maxWidth="sm"
       aria-labelledby="contact-detail-title"
     >
-      <DialogTitle id="contact-detail-title">جزئیات پیام</DialogTitle>
+      <DialogTitle id="contact-detail-title">
+        <span className="contact-detail-heading">
+          <ForumOutlinedIcon aria-hidden="true" /> جزئیات پیام
+        </span>
+      </DialogTitle>
       <DialogContent>
         {error ? (
           <div role="alert">
@@ -68,14 +79,34 @@ function MessageDialog({ id, close }: { id: string; close: () => void }) {
         ) : !item ? (
           <p role="status">در حال بارگذاری پیام…</p>
         ) : (
-          <>
-            <p>نام: {item.name}</p>
-            <p>
-              شماره همراه: <bdi dir="ltr">{item.mobile}</bdi>
-            </p>
-            <p>تاریخ: {formatTehranJalali(item.createdAt)}</p>
-            <p className="contact-message-text">{item.message}</p>
-          </>
+          <div className="contact-detail">
+            <div className="contact-detail-meta">
+              <span>
+                <PersonOutlinedIcon aria-hidden="true" /> نام
+              </span>
+              <strong>{item.name}</strong>
+            </div>
+            <div className="contact-detail-meta">
+              <span>
+                <PhoneOutlinedIcon aria-hidden="true" /> شماره همراه
+              </span>
+              <strong>
+                <bdi dir="ltr">{item.mobile}</bdi>
+              </strong>
+            </div>
+            <div className="contact-detail-meta">
+              <span>
+                <EventOutlinedIcon aria-hidden="true" /> تاریخ
+              </span>
+              <strong>{formatTehranJalali(item.createdAt)}</strong>
+            </div>
+            <div className="contact-detail-message">
+              <strong>
+                <ForumOutlinedIcon aria-hidden="true" /> متن پیام
+              </strong>
+              <p className="contact-message-text">{item.message}</p>
+            </div>
+          </div>
         )}
       </DialogContent>
       <DialogActions>
@@ -118,10 +149,29 @@ export function ContactSubmissions() {
     setError(false);
   }
   return (
-    <>
-      <h1>پیام‌های تماس</h1>
-      <p>پیام‌های ثبت‌شده در فرم تماس فروشگاه</p>
-      <section className="dashboard-panel">
+    <div className="contact-admin-page">
+      <div className="contact-admin-heading">
+        <span className="contact-admin-heading-icon">
+          <ForumOutlinedIcon aria-hidden="true" />
+        </span>
+        <div>
+          <h1>پیام‌های تماس</h1>
+          <p>پیام‌های ثبت‌شده در فرم تماس فروشگاه</p>
+        </div>
+      </div>
+      <section
+        className="dashboard-panel contact-admin-panel"
+        aria-label="فهرست پیام‌های تماس"
+      >
+        <div className="contact-admin-panel-heading">
+          <span>
+            <ForumOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h2>فهرست پیام‌ها</h2>
+            <p>جست‌وجو و مشاهده پیام‌های مشتریان</p>
+          </div>
+        </div>
         <div className="customer-filters">
           <TextField
             fullWidth={false}
@@ -130,7 +180,16 @@ export function ContactSubmissions() {
             label="جست‌وجوی نام، شماره یا متن"
             type="search"
             value={query}
-            slotProps={{ htmlInput: { maxLength: 120 } }}
+            slotProps={{
+              htmlInput: { maxLength: 120 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
             onChange={(e) => {
               reset();
               setPage(1);
@@ -166,12 +225,12 @@ export function ContactSubmissions() {
           <p role="status">در حال بارگذاری…</p>
         ) : (
           <>
-            <p role="status">
+            <p role="status" className="contact-admin-count">
               {result.total.toLocaleString("fa-IR")} پیام پیدا شد.
             </p>
             {result.items.length ? (
-              <div className="customers-table-wrap">
-                <table className="customers-table">
+              <div className="customers-table-wrap contact-admin-table-wrap">
+                <table className="customers-table contact-admin-table">
                   <thead>
                     <tr>
                       <th>نام</th>
@@ -184,7 +243,14 @@ export function ContactSubmissions() {
                   <tbody>
                     {result.items.map((item) => (
                       <tr key={item.id}>
-                        <td data-label="نام">{item.name}</td>
+                        <td data-label="نام">
+                          <span className="contact-sender">
+                            <span aria-hidden="true">
+                              {Array.from(item.name || "؟")[0]}
+                            </span>
+                            <strong>{item.name}</strong>
+                          </span>
+                        </td>
                         <td data-label="شماره همراه">
                           <bdi dir="ltr">{item.mobile}</bdi>
                         </td>
@@ -198,6 +264,9 @@ export function ContactSubmissions() {
                         </td>
                         <td data-label="عملیات">
                           <Button
+                            className="contact-view-button"
+                            size="small"
+                            startIcon={<VisibilityOutlinedIcon />}
                             onClick={() => setSelected(item.id)}
                             aria-label={`مشاهده پیام ${item.name}`}
                           >
@@ -210,7 +279,7 @@ export function ContactSubmissions() {
                 </table>
               </div>
             ) : (
-              <p>
+              <p className="contact-admin-empty">
                 {query
                   ? "پیامی با این جست‌وجو پیدا نشد."
                   : "هنوز پیامی ثبت نشده است."}
@@ -247,6 +316,6 @@ export function ContactSubmissions() {
           close={() => setSelected(null)}
         />
       )}
-    </>
+    </div>
   );
 }
