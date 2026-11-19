@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { normalizeDigits } from "@/shared/locale";
 import { syncCart } from "@/storefront/cart/client";
+import { notifyCustomerChanged } from "./customer-name";
 import {
   Alert,
   Box,
@@ -9,6 +11,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   TextField,
   Snackbar,
 } from "@mui/material";
@@ -18,18 +21,30 @@ export function CustomerAuthDialog({
   triggerLabel = "ورود / ثبت‌نام",
   disabled = false,
   onAuthenticated,
+  open: controlledOpen,
+  onClose,
 }: {
   triggerLabel?: string;
   disabled?: boolean;
   onAuthenticated?: () => void | Promise<void>;
+  open?: boolean;
+  onClose?: () => void;
 } = {}) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
   const [phase, setPhase] = useState<Phase>("phone");
   const [mobile, setMobile] = useState("");
   const [code, setCode] = useState("");
-  const [name, setName] = useState("");
+  const [codeDigits, setCodeDigits] = useState<string[]>([]);
+  const codeInputs = useRef<(HTMLInputElement | null)[]>([]);
+  const submitting = useRef(false);
+  const [developmentCode, setDevelopmentCode] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -37,23 +52,31 @@ export function CustomerAuthDialog({
   function close() {
     if (!busy) {
       setOpen(false);
+      onClose?.();
       setPhase("phone");
       setCode("");
+      setCodeDigits([]);
+      setDevelopmentCode(null);
       setPassword("");
       setConfirmation("");
+      setShowPassword(false);
+      setShowConfirmation(false);
       setMessage("");
     }
   }
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  async function submit(event?: React.FormEvent, completedCode?: string) {
+    event?.preventDefault();
+    if (submitting.current) return;
+    if (phase === "code" && (completedCode ?? code).length !== 4) return;
+    submitting.current = true;
     setBusy(true);
     setMessage("");
     const payload =
       phase === "phone"
         ? { action: "send", mobile }
         : phase === "code"
-          ? { action: "verify", mobile, code }
-          : { action: "register", name, password, confirmation };
+          ? { action: "verify", mobile, code: completedCode ?? code }
+          : { action: "register", firstName, lastName, password, confirmation };
     try {
       const response = await fetch("/api/auth/otp", {
         method: "POST",
@@ -63,15 +86,27 @@ export function CustomerAuthDialog({
       const result = await response.json();
       if (!response.ok) {
         setMessage(result.message || "درخواست انجام نشد.");
+        if (phase === "code") {
+          setCode("");
+          setCodeDigits([]);
+        }
         return;
       }
       if (phase === "phone") {
+        setCodeDigits([]);
+        setCode("");
+        setDevelopmentCode(
+          typeof result.developmentCode === "string"
+            ? result.developmentCode
+            : null,
+        );
         setPhase("code");
         setMessage("کد تأیید را وارد کنید.");
       } else if (result.next === "registration") {
         setPhase("registration");
         setMessage("");
       } else {
+        notifyCustomerChanged();
         let cartSynced = false;
         try {
           await syncCart();
@@ -84,28 +119,35 @@ export function CustomerAuthDialog({
         }
         setSignedIn(true);
         setOpen(false);
+        onClose?.();
         setPhase("phone");
         setCode("");
         setPassword("");
         setConfirmation("");
+        setShowPassword(false);
+        setShowConfirmation(false);
         setMessage("");
-        if (cartSynced && onAuthenticated) await onAuthenticated();
+        if (onAuthenticated && (cartSynced || controlledOpen !== undefined))
+          await onAuthenticated();
       }
     } catch {
       setMessage("ارتباط برقرار نشد. دوباره تلاش کنید.");
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        variant={onAuthenticated ? "contained" : "outlined"}
-        disabled={disabled}
-      >
-        {triggerLabel}
-      </Button>
+      {controlledOpen === undefined && (
+        <Button
+          onClick={() => setOpen(true)}
+          variant={onAuthenticated ? "contained" : "outlined"}
+          disabled={disabled}
+        >
+          {triggerLabel}
+        </Button>
+      )}
       <Snackbar
         open={signedIn}
         autoHideDuration={5000}
@@ -126,7 +168,10 @@ export function CustomerAuthDialog({
               ? "تأیید شماره همراه"
               : "تکمیل اطلاعات"}
         </DialogTitle>
-        <Box component="form" onSubmit={submit}>
+        <Box
+          component="form"
+          onSubmit={(event: React.FormEvent) => void submit(event)}
+        >
           <DialogContent sx={{ display: "grid", gap: 2 }}>
             {message && (
               <Alert severity="info" role="status">
@@ -146,22 +191,117 @@ export function CustomerAuthDialog({
             )}
             {phase === "code" && (
               <>
-                <TextField
-                  label="کد چهار رقمی"
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  autoComplete="one-time-code"
-                  slotProps={{
-                    htmlInput: { inputMode: "numeric", maxLength: 4 },
-                  }}
-                  required
-                  autoFocus
-                />
+                <Box
+                  component="fieldset"
+                  sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}
+                >
+                  <Box
+                    component="legend"
+                    sx={{ color: "text.primary", fontSize: "0.875rem", mb: 1 }}
+                  >
+                    کد تأیید
+                  </Box>
+                  <Box
+                    dir="ltr"
+                    sx={{ display: "flex", gap: 1, justifyContent: "center" }}
+                  >
+                    {Array.from({ length: 4 }, (_, index) => (
+                      <TextField
+                        key={index}
+                        value={codeDigits[index] ?? ""}
+                        inputRef={(element: HTMLInputElement | null) => {
+                          codeInputs.current[index] = element;
+                        }}
+                        autoFocus={index === 0}
+                        disabled={busy}
+                        onChange={(event) => {
+                          const value = normalizeDigits(
+                            event.target.value,
+                          ).replace(/\D/g, "");
+                          const next = [...codeDigits];
+                          next[index] = value.slice(-1);
+                          setCodeDigits(next);
+                          setCode(next.join(""));
+                          if (
+                            Array.from(
+                              { length: 4 },
+                              (_, i) => next[i] ?? "",
+                            ).every((digit) => /^\d$/.test(digit))
+                          ) {
+                            void submit(undefined, next.join(""));
+                          }
+                          if (value && index < 3)
+                            codeInputs.current[index + 1]?.focus();
+                        }}
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === "Backspace" &&
+                            !codeDigits[index] &&
+                            index > 0
+                          )
+                            codeInputs.current[index - 1]?.focus();
+                          if (event.key === "ArrowLeft" && index > 0)
+                            codeInputs.current[index - 1]?.focus();
+                          if (event.key === "ArrowRight" && index < 3)
+                            codeInputs.current[index + 1]?.focus();
+                        }}
+                        onPaste={(event) => {
+                          event.preventDefault();
+                          const digits = normalizeDigits(
+                            event.clipboardData.getData("text"),
+                          )
+                            .replace(/\D/g, "")
+                            .slice(0, 4)
+                            .split("");
+                          if (!digits.length) return;
+                          setCodeDigits(digits);
+                          setCode(digits.join(""));
+                          if (digits.length === 4)
+                            void submit(undefined, digits.join(""));
+                          codeInputs.current[
+                            Math.min(digits.length, 4 - 1)
+                          ]?.focus();
+                        }}
+                        slotProps={{
+                          htmlInput: {
+                            inputMode: "numeric",
+                            maxLength: 1,
+                            autoComplete: index === 0 ? "one-time-code" : "off",
+                            "aria-label": `رقم ${index + 1} کد تأیید`,
+                          },
+                        }}
+                        sx={{
+                          width: 52,
+                          maxWidth: "18%",
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2,
+                            backgroundColor: "background.paper",
+                          },
+                          "& input": {
+                            textAlign: "center",
+                            fontSize: "1.3rem",
+                            fontWeight: 600,
+                            padding: "12px 0",
+                          },
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+                {developmentCode && (
+                  <Box
+                    component="small"
+                    sx={{ color: "text.secondary", fontSize: "0.7rem" }}
+                  >
+                    کد توسعه: <bdi>{developmentCode}</bdi>
+                  </Box>
+                )}
                 <Button
                   type="button"
                   onClick={() => {
                     setPhase("phone");
                     setCode("");
+                    setCodeDigits([]);
                     setMessage("");
                   }}
                 >
@@ -172,27 +312,82 @@ export function CustomerAuthDialog({
             {phase === "registration" && (
               <>
                 <TextField
-                  label="نام و نام خانوادگی"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  label="نام"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
                   required
                   autoFocus
+                  autoComplete="given-name"
+                  slotProps={{ htmlInput: { maxLength: 60 } }}
+                />
+                <TextField
+                  label="نام خانوادگی"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                  required
+                  autoComplete="family-name"
+                  slotProps={{ htmlInput: { maxLength: 60 } }}
                 />
                 <TextField
                   label="رمز عبور"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  helperText="حداقل ۱۲ نویسه؛ ورود فعلاً با کد پیامکی انجام می‌شود."
+                  helperText="حداقل ۸ نویسه؛ ورود فعلاً با کد پیامکی انجام می‌شود."
                   autoComplete="new-password"
+                  slotProps={{
+                    htmlInput: { minLength: 8 },
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Button
+                            type="button"
+                            size="small"
+                            aria-label={
+                              showPassword
+                                ? "پنهان کردن رمز عبور"
+                                : "نمایش رمز عبور"
+                            }
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword((shown) => !shown)}
+                          >
+                            {showPassword ? "پنهان" : "نمایش"}
+                          </Button>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                   required
                 />
                 <TextField
                   label="تکرار رمز عبور"
-                  type="password"
+                  type={showConfirmation ? "text" : "password"}
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                   autoComplete="new-password"
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Button
+                            type="button"
+                            size="small"
+                            aria-label={
+                              showConfirmation
+                                ? "پنهان کردن تکرار رمز عبور"
+                                : "نمایش تکرار رمز عبور"
+                            }
+                            aria-pressed={showConfirmation}
+                            onClick={() =>
+                              setShowConfirmation((shown) => !shown)
+                            }
+                          >
+                            {showConfirmation ? "پنهان" : "نمایش"}
+                          </Button>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                   required
                 />
               </>
@@ -202,15 +397,15 @@ export function CustomerAuthDialog({
             <Button onClick={close} disabled={busy}>
               انصراف
             </Button>
-            <Button type="submit" variant="contained" disabled={busy}>
-              {busy
-                ? "در حال بررسی…"
-                : phase === "phone"
-                  ? "دریافت کد"
-                  : phase === "code"
-                    ? "تأیید"
+            {phase !== "code" && (
+              <Button type="submit" variant="contained" disabled={busy}>
+                {busy
+                  ? "در حال بررسی…"
+                  : phase === "phone"
+                    ? "دریافت کد"
                     : "تکمیل ثبت‌نام"}
-            </Button>
+              </Button>
+            )}
           </DialogActions>
         </Box>
       </Dialog>
