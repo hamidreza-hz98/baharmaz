@@ -15,6 +15,7 @@ const schema = new Schema(
     code: { type: String, required: true, immutable: true },
     customerId: { type: String, required: true, immutable: true },
     status: String,
+    isTest: { type: Boolean, default: false, immutable: true },
     placedAt: { type: Date, immutable: true },
     items: { type: [item], immutable: true },
     customer: { type: Schema.Types.Mixed, immutable: true },
@@ -49,6 +50,7 @@ function orderCode(value: string) {
 export function orderSnapshot(row: {
   code: string;
   status: string;
+  isTest?: boolean;
   placedAt: Date;
   items: {
     title: string;
@@ -100,6 +102,7 @@ export function orderSnapshot(row: {
     !Number.isNaN(timestamp.getTime());
   return {
     code: row.code,
+    isTest: row.isTest === true,
     status: row.status,
     placedAt: row.placedAt,
     items: row.items.map((i) => {
@@ -134,11 +137,14 @@ export function orderSnapshot(row: {
       slotLabel: string(delivery.slotLabel),
     },
     payment: {
-      status: verified
-        ? "verified"
-        : payment.status === "failed"
-          ? "failed"
-          : "pending",
+      status:
+        row.isTest && payment.status === "sandbox_verified"
+          ? "sandbox_verified"
+          : verified
+            ? "verified"
+            : payment.status === "failed"
+              ? "failed"
+              : "pending",
       transactionReference: string(payment.transactionReference),
       verifiedAt: verified ? timestamp.toISOString() : null,
     },
