@@ -2,14 +2,22 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { formatMoney, formatTehranJalali } from "@/shared/locale";
+import { SandboxOrderHistory } from "./sandbox-order-history";
 type Order = {
   code: string;
+  isTest: boolean;
   status: string;
   placedAt: string;
-  items: { title: string; imageId: string | null }[];
+  items: {
+    title: string;
+    imageId: string | null;
+    quantity: number;
+    lineRials: number;
+  }[];
   payment: { status: string };
-  totals: { paidRials: number | null };
+  totals: { paidRials: number | null; totalRials: number | null };
 };
 const tabs = [
   { value: "all", label: "همه سفارش‌ها" },
@@ -59,7 +67,7 @@ export function OrderHistory() {
   return (
     <>
       <h1>سفارش‌های من</h1>
-      <p>ثبت سفارش جدید هنوز فعال نشده است.</p>
+      <SandboxOrderHistory />
       <div className="order-tabs" role="group" aria-label="وضعیت سفارش">
         {tabs.map((tab) => (
           <button
@@ -84,9 +92,14 @@ export function OrderHistory() {
         </p>
       )}
       {!data && !error && <p role="status">در حال دریافت سفارش‌ها…</p>}
-      {data?.items.length === 0 && <p>سفارشی برای این وضعیت پیدا نشد.</p>}
+      {data?.items.length === 0 && (
+        <p>سفارش غیرآزمایشی برای این وضعیت پیدا نشد.</p>
+      )}
       {data?.items.map((order) => (
         <article className="order-card" key={order.code}>
+          {order.isTest && (
+            <span className="sandbox-result-badge">سفارش آزمایشی</span>
+          )}
           <div className="order-card-top">
             <strong>{statusNames[order.status] || "وضعیت نامشخص"}</strong>
             <span>
@@ -95,25 +108,51 @@ export function OrderHistory() {
           </div>
           <p>{formatTehranJalali(order.placedAt)}</p>
           <p>
-            {order.payment.status === "verified" &&
-            order.totals.paidRials !== null
-              ? `مبلغ پرداخت‌شده: ${formatMoney(order.totals.paidRials)}`
-              : "پرداخت تأییدشده ثبت نشده است."}
+            {order.isTest && order.totals.totalRials !== null
+              ? `مبلغ آزمایشی: ${formatMoney(order.totals.totalRials)}`
+              : order.payment.status === "verified" &&
+                  order.totals.paidRials !== null
+                ? `مبلغ پرداخت‌شده: ${formatMoney(order.totals.paidRials)}`
+                : "پرداخت تأییدشده ثبت نشده است."}
           </p>
-          <div className="order-thumbnails">
-            {order.items
-              .filter((i) => i.imageId)
-              .slice(0, 4)
-              .map((item, index) => (
-                <img
-                  key={`${item.imageId}-${index}`}
-                  src={`/api/account/orders/${encodeURIComponent(order.code)}/media/${item.imageId}`}
-                  alt=""
-                />
-              ))}
+          <div className="account-order-products">
+            {order.items.map((item, index) => (
+              <div
+                className="account-order-product"
+                key={`${item.imageId}-${index}`}
+              >
+                {item.imageId ? (
+                  <img
+                    src={`/api/account/orders/${encodeURIComponent(order.code)}/media/${item.imageId}`}
+                    alt=""
+                  />
+                ) : (
+                  <span
+                    className="account-order-image-placeholder"
+                    aria-hidden="true"
+                  >
+                    □
+                  </span>
+                )}
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>
+                    تعداد:{" "}
+                    {new Intl.NumberFormat("fa-IR").format(item.quantity)}
+                  </span>
+                </div>
+                <strong className="account-order-product-price">
+                  {formatMoney(item.lineRials)}
+                </strong>
+              </div>
+            ))}
           </div>
-          <Link href={`/account/orders/${encodeURIComponent(order.code)}`}>
-            جزئیات سفارش <span className="sr-only">{order.code}</span>
+          <Link
+            className="order-card-action"
+            href={`/account/orders/${encodeURIComponent(order.code)}`}
+          >
+            جزئیات سفارش <ArrowBackIcon aria-hidden="true" />{" "}
+            <span className="sr-only">{order.code}</span>
           </Link>
         </article>
       ))}
