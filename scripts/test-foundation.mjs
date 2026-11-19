@@ -9,6 +9,7 @@ const productRoute = join(process.cwd(), "src", "app", "product-test-probe");
 const addressRoute = join(process.cwd(), "src", "app", "address-test-probe");
 const cartRoute = join(process.cwd(), "src", "app", "cart-test-probe");
 const checkoutRoute = join(process.cwd(), "src", "app", "checkout-test-probe");
+const reviewRoute = join(process.cwd(), "src", "app", "review-test-probe");
 const ordersRoute = join(process.cwd(), "src", "app", "orders-test-probe");
 const operationalSettingsRoute = join(
   process.cwd(),
@@ -67,6 +68,7 @@ let publicCreated = false;
 let addressCreated = false;
 let cartCreated = false;
 let checkoutCreated = false;
+let reviewCreated = false;
 let ordersCreated = false;
 let operationalSettingsCreated = false;
 let contentSettingsCreated = false;
@@ -137,6 +139,13 @@ try {
   await writeFile(
     join(checkoutRoute, "page.tsx"),
     'export { default } from "../../../tests/fixtures/checkout-preview";\n',
+    { flag: "wx" },
+  );
+  await mkdir(reviewRoute);
+  reviewCreated = true;
+  await writeFile(
+    join(reviewRoute, "page.tsx"),
+    'export { default } from "../../../tests/fixtures/review-preview";\n',
     { flag: "wx" },
   );
   await mkdir(ordersRoute);
@@ -225,6 +234,7 @@ try {
   if (ordersCreated) await rm(ordersRoute, { recursive: true, force: true });
   if (checkoutCreated)
     await rm(checkoutRoute, { recursive: true, force: true });
+  if (reviewCreated) await rm(reviewRoute, { recursive: true, force: true });
   if (cartCreated) await rm(cartRoute, { recursive: true, force: true });
   if (addressCreated) await rm(addressRoute, { recursive: true, force: true });
   if (publicCreated) await rm(publicRoute, { recursive: true, force: true });
