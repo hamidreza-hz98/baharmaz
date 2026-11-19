@@ -2,6 +2,13 @@
 import { useEffect, useState } from "react";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import FilterAltOffOutlinedIcon from "@mui/icons-material/FilterAltOffOutlined";
+import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
+import PhoneIphoneOutlinedIcon from "@mui/icons-material/PhoneIphoneOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Alert,
   Button,
@@ -9,6 +16,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   TextField,
   MenuItem,
 } from "@mui/material";
@@ -16,6 +24,8 @@ import { formatMoney, formatTehranJalali } from "@/shared/locale";
 type Row = {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   mobile: string;
   mobileVerified: boolean;
   createdAt: string | null;
@@ -38,7 +48,8 @@ function CustomerEditor({
   close: () => void;
   saved: () => void;
 }) {
-  const [name, setName] = useState(row?.name ?? "");
+  const [firstName, setFirstName] = useState(row?.firstName ?? "");
+  const [lastName, setLastName] = useState(row?.lastName ?? "");
   const [mobile, setMobile] = useState(row?.mobile ?? "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,11 +66,12 @@ function CustomerEditor({
             ? {
                 action: "update",
                 id: row.id,
-                name,
+                firstName,
+                lastName,
                 mobile,
                 expectedMobile: row.mobile,
               }
-            : { action: "create", name, mobile },
+            : { action: "create", firstName, lastName, mobile },
         ),
       });
       const result = await response.json();
@@ -88,13 +100,25 @@ function CustomerEditor({
       <form onSubmit={submit}>
         <DialogContent className="customer-editor-fields">
           <TextField
-            label="نام و نام خانوادگی"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            label="نام"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             required
             autoFocus
             fullWidth
-            slotProps={{ htmlInput: { maxLength: 120 } }}
+            slotProps={{
+              htmlInput: { maxLength: 60, autoComplete: "given-name" },
+            }}
+          />
+          <TextField
+            label="نام خانوادگی"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            fullWidth
+            slotProps={{
+              htmlInput: { maxLength: 60, autoComplete: "family-name" },
+            }}
           />
           <TextField
             label="شماره همراه"
@@ -180,11 +204,16 @@ export function AdminCustomers() {
     setRevision((n) => n + 1);
   }
   return (
-    <>
-      <div className="dashboard-heading">
-        <div>
-          <h1>مشتریان</h1>
-          <p>نمایش و مدیریت حساب‌های مشتریان</p>
+    <div className="customers-page">
+      <div className="dashboard-heading customers-page-heading">
+        <div className="customers-page-heading-title">
+          <span className="customers-heading-icon">
+            <PeopleOutlinedIcon aria-hidden="true" />
+          </span>
+          <div>
+            <h1>مشتریان</h1>
+            <p>نمایش و مدیریت حساب‌های مشتریان</p>
+          </div>
         </div>
         <Button
           variant="contained"
@@ -195,7 +224,10 @@ export function AdminCustomers() {
           افزودن مشتری
         </Button>
       </div>
-      <section className="dashboard-panel">
+      <section
+        className="dashboard-panel customers-panel"
+        aria-label="فهرست مشتریان"
+      >
         {loading && <p role="status">در حال بارگذاری…</p>}
         {error && (
           <div role="alert">
@@ -207,17 +239,36 @@ export function AdminCustomers() {
         )}
         {data && (
           <div className="customer-summary">
-            <div>
-              تعداد مشتریان
-              <strong>{data.summary.customers.toLocaleString("fa-IR")}</strong>
+            <div className="customer-stat">
+              <span className="customer-stat-icon">
+                <PeopleOutlinedIcon aria-hidden="true" />
+              </span>
+              <div>
+                <span>تعداد مشتریان</span>
+                <strong>
+                  {data.summary.customers.toLocaleString("fa-IR")}
+                </strong>
+              </div>
             </div>
-            <div>
-              شماره تأییدنشده
-              <strong>{data.summary.unverified.toLocaleString("fa-IR")}</strong>
+            <div className="customer-stat">
+              <span className="customer-stat-icon is-warning">
+                <PhoneIphoneOutlinedIcon aria-hidden="true" />
+              </span>
+              <div>
+                <span>شماره تأییدنشده</span>
+                <strong>
+                  {data.summary.unverified.toLocaleString("fa-IR")}
+                </strong>
+              </div>
             </div>
-            <div>
-              مجموع خرید پرداخت‌شده
-              <strong>{formatMoney(data.summary.purchaseRials)}</strong>
+            <div className="customer-stat">
+              <span className="customer-stat-icon is-success">
+                <PaymentsOutlinedIcon aria-hidden="true" />
+              </span>
+              <div>
+                <span>مجموع خرید پرداخت‌شده</span>
+                <strong>{formatMoney(data.summary.purchaseRials)}</strong>
+              </div>
             </div>
           </div>
         )}
@@ -229,7 +280,16 @@ export function AdminCustomers() {
             label="جست‌وجوی نام یا موبایل"
             type="search"
             value={query}
-            slotProps={{ htmlInput: { maxLength: 120 } }}
+            slotProps={{
+              htmlInput: { maxLength: 120 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
             onChange={(e) => filter(() => setQuery(e.target.value))}
           />
           <TextField
@@ -260,7 +320,7 @@ export function AdminCustomers() {
         </div>
         {data && (
           <>
-            <p role="status">
+            <p role="status" className="customer-results-count">
               {data.total.toLocaleString("fa-IR")} مشتری پیدا شد.
             </p>
             {data.items.length ? (
@@ -280,12 +340,29 @@ export function AdminCustomers() {
                   <tbody>
                     {data.items.map((row) => (
                       <tr key={row.id}>
-                        <td data-label="نام">{row.name}</td>
+                        <td data-label="نام">
+                          <span className="customer-name">
+                            <span
+                              className="customer-avatar"
+                              aria-hidden="true"
+                            >
+                              {Array.from(row.firstName || row.name || "؟")[0]}
+                            </span>
+                            <strong>{row.name}</strong>
+                          </span>
+                        </td>
                         <td data-label="شماره همراه">
                           <bdi>{row.mobile}</bdi>
                         </td>
                         <td data-label="وضعیت شماره">
-                          {row.mobileVerified ? "تأییدشده" : "تأییدنشده"}
+                          <span
+                            className={`customer-verification ${row.mobileVerified ? "is-verified" : "is-unverified"}`}
+                          >
+                            {row.mobileVerified && (
+                              <VerifiedOutlinedIcon aria-hidden="true" />
+                            )}
+                            {row.mobileVerified ? "تأییدشده" : "تأییدنشده"}
+                          </span>
                         </td>
                         <td data-label="تعداد سفارش">
                           {row.orderCount.toLocaleString("fa-IR")}
@@ -300,6 +377,9 @@ export function AdminCustomers() {
                         </td>
                         <td data-label="عملیات">
                           <Button
+                            size="small"
+                            className="customer-edit-button"
+                            startIcon={<EditOutlinedIcon />}
                             onClick={() => setEditor(row)}
                             aria-label={`ویرایش ${row.name}`}
                           >
@@ -312,7 +392,10 @@ export function AdminCustomers() {
                 </table>
               </div>
             ) : (
-              <p>مشتری با این فیلترها پیدا نشد.</p>
+              <div className="customers-empty">
+                <PeopleOutlinedIcon aria-hidden="true" />
+                <p>مشتری با این فیلترها پیدا نشد.</p>
+              </div>
             )}
             <div className="dashboard-pagination">
               <label>
@@ -352,8 +435,9 @@ export function AdminCustomers() {
             </div>
           </>
         )}
-        <p>
-          مجموع خرید شامل پرداخت‌های تأییدشده است و بازپرداخت‌ها را کسر نمی‌کند.
+        <p className="customers-note">
+          <InfoOutlinedIcon aria-hidden="true" /> مجموع خرید شامل پرداخت‌های
+          تأییدشده است و بازپرداخت‌ها را کسر نمی‌کند.
         </p>
       </section>
       {editor && (
@@ -367,6 +451,6 @@ export function AdminCustomers() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }
