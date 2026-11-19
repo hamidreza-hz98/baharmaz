@@ -24,8 +24,12 @@ export function parsePaymentConfig(
   const callback = env.AQAYE_CALLBACK_URL?.trim();
   if (!callback) throw new Error("Payment callback is required.");
   const url = new URL(callback);
+  const localDevelopment =
+    env.NODE_ENV === "development" &&
+    url.protocol === "http:" &&
+    ["localhost", "127.0.0.1"].includes(url.hostname);
   if (
-    url.protocol !== "https:" ||
+    (url.protocol !== "https:" && !localDevelopment) ||
     url.username ||
     url.password ||
     url.hash ||
@@ -90,6 +94,7 @@ export function createAqayeAdapter(
     AQAYE_MODE: config.mode,
     AQAYE_PIN: config.pin,
     AQAYE_CALLBACK_URL: config.callback,
+    NODE_ENV: process.env.NODE_ENV,
   });
   if (config.mode !== "sandbox" || config.pin !== "sandbox")
     throw new Error("Only sandbox contract testing is enabled.");
@@ -102,7 +107,7 @@ export function createAqayeAdapter(
         pin: config.pin,
         amount,
         callback: config.callback,
-        callback_method: "POST",
+        callback_method: "GET",
         invoice_id: input.invoiceId,
       });
       if (!ok || data.status !== "success")
