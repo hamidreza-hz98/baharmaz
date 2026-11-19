@@ -56,6 +56,7 @@ export async function listAdminOrders(
       const snapshot = orderSnapshot(row);
       return {
         code: snapshot.code,
+        isTest: snapshot.isTest,
         status: snapshot.status,
         placedAt: snapshot.placedAt,
         customerName: snapshot.customer.name,
