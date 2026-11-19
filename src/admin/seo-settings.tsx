@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import ContactMailOutlinedIcon from "@mui/icons-material/ContactMailOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import {
   Alert,
   Button,
@@ -30,18 +39,40 @@ const pageNames: Record<StaticPage, string> = {
   about: "درباره ما",
   products: "محصولات",
 };
+const pageIcons: Record<StaticPage, React.ReactNode> = {
+  home: <HomeOutlinedIcon />,
+  contact: <ContactMailOutlinedIcon />,
+  faq: <QuizOutlinedIcon />,
+  terms: <GavelOutlinedIcon />,
+  about: <InfoOutlinedIcon />,
+  products: <Inventory2OutlinedIcon />,
+};
 
-function SeoPreview({ page, value }: { page: StaticPage; value: StaticSeoSettings[StaticPage] }) {
+function SeoPreview({
+  page,
+  value,
+}: {
+  page: StaticPage;
+  value: StaticSeoSettings[StaticPage];
+}) {
   const checked = staticSeoCompleteness(value);
   const preview = resolveStaticSeo(page, value);
   return (
-    <section className="seo-preview" aria-label={`پیش‌نمایش ${pageNames[page]}`}>
-      <h3>پیش‌نمایش جست‌وجو و اشتراک‌گذاری</h3>
-      <p>
-        مسیر: <bdi dir="ltr">{staticSeoDefaults[page].path}</bdi>
-      </p>
-      <strong>{preview.title}</strong>
-      <p>{preview.description}</p>
+    <section
+      className="seo-preview"
+      aria-label={`پیش‌نمایش ${pageNames[page]}`}
+    >
+      <h3>
+        <SearchOutlinedIcon aria-hidden="true" /> پیش‌نمایش جست‌وجو و
+        اشتراک‌گذاری
+      </h3>
+      <div className="seo-search-card">
+        <p className="seo-preview-path">
+          مسیر: <bdi dir="ltr">{staticSeoDefaults[page].path}</bdi>
+        </p>
+        <strong className="seo-preview-title">{preview.title}</strong>
+        <p className="seo-preview-description">{preview.description}</p>
+      </div>
       <p>تکمیل تنظیمات: {checked.completed.toLocaleString("fa-IR")} از ۲</p>
       <progress
         max={checked.total}
@@ -64,7 +95,8 @@ function SeoPreview({ page, value }: { page: StaticPage; value: StaticSeoSetting
               : "توضیح را وارد کنید؛ تا آن زمان توضیح پیش‌فرض استفاده می‌شود."}
         </li>
       </ul>
-      <p>
+      <p className="seo-preview-hint">
+        <InfoOutlinedIcon aria-hidden="true" />
         این نشانگر فقط وجود عنوان و توضیح و محدودیت طول آن‌ها را بررسی می‌کند و
         رتبه جست‌وجو را پیش‌بینی نمی‌کند. ظاهر نهایی در سرویس‌ها ممکن است متفاوت
         باشد.
@@ -119,7 +151,11 @@ export function SeoSettingsEditor() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  function edit(page: StaticPage, field: "title" | "description", value: string) {
+  function edit(
+    page: StaticPage,
+    field: "title" | "description",
+    value: string,
+  ) {
     setDraft((current) =>
       current
         ? { ...current, [page]: { ...current[page], [field]: value } }
@@ -170,21 +206,36 @@ export function SeoSettingsEditor() {
   if (!state || !draft)
     return (
       <div role="alert">
-        {error || "دریافت تنظیمات سئو ممکن نشد."} <Button onClick={reload}>تلاش دوباره</Button>
+        {error || "دریافت تنظیمات سئو ممکن نشد."}{" "}
+        <Button onClick={reload}>تلاش دوباره</Button>
       </div>
     );
 
   return (
-    <>
-      <h1>تنظیمات سئو</h1>
-      <p>
+    <div className="seo-settings-page">
+      <div className="seo-settings-heading">
+        <span>
+          <TravelExploreOutlinedIcon aria-hidden="true" />
+        </span>
+        <div>
+          <h1>تنظیمات سئو</h1>
+          <p>مدیریت عنوان و توضیحات صفحات فروشگاه</p>
+        </div>
+      </div>
+      <p className="seo-settings-notice">
+        <InfoOutlinedIcon aria-hidden="true" />
         این صفحه فقط عنوان و توضیحات جست‌وجوی صفحات ثابت را نگه می‌دارد. محتوای
         صفحات در بخش‌های تنظیمات جداگانه مدیریت می‌شود.
       </p>
-      {message && <Alert severity="success" role="status">{message}</Alert>}
+      {message && (
+        <Alert severity="success" role="status">
+          {message}
+        </Alert>
+      )}
       {error && (
         <Alert severity="error" role="alert">
-          {error} تغییرات ذخیره‌نشده حفظ شده‌اند. {conflict && (
+          {error} تغییرات ذخیره‌نشده حفظ شده‌اند.{" "}
+          {conflict && (
             <Button type="button" onClick={() => setConfirmReload(true)}>
               دریافت نسخه جدید
             </Button>
@@ -192,11 +243,26 @@ export function SeoSettingsEditor() {
         </Alert>
       )}
       <form onSubmit={save} className="content-settings-form">
-        <fieldset disabled={busy}>
-          <legend>عنوان و توضیح صفحات ثابت</legend>
+        <fieldset disabled={busy} className="seo-settings-section">
+          <legend>
+            <span className="homepage-settings-legend">
+              <span>
+                <DescriptionOutlinedIcon aria-hidden="true" />
+              </span>{" "}
+              عنوان و توضیح صفحات ثابت
+            </span>
+          </legend>
           {staticPages.map((page) => (
-            <div className="content-entry" key={page}>
-              <h2>{pageNames[page]}</h2>
+            <div className="content-entry seo-page-entry" key={page}>
+              <div className="seo-page-entry-heading">
+                <span aria-hidden="true">{pageIcons[page]}</span>
+                <div>
+                  <h2>{pageNames[page]}</h2>
+                  <small>
+                    <bdi dir="ltr">{staticSeoDefaults[page].path}</bdi>
+                  </small>
+                </div>
+              </div>
               <label>
                 عنوان سئو {pageNames[page]}
                 <input
@@ -244,6 +310,6 @@ export function SeoSettingsEditor() {
           <Button onClick={reload}>دریافت نسخه جدید</Button>
         </DialogActions>
       </Dialog>
-    </>
+    </div>
   );
 }
