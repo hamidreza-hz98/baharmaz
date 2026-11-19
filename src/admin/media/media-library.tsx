@@ -2,6 +2,8 @@
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ClearOutlinedIcon from "@mui/icons-material/ClearOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import { useEffect, useId, useState } from "react";
 import Image from "next/image";
 import MovieOutlinedIcon from "@mui/icons-material/MovieOutlined";
@@ -17,6 +19,7 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
+  InputAdornment,
   MenuItem,
   Select,
   TextField,
@@ -79,7 +82,9 @@ export function MediaLibrary({
   const [videoError, setVideoError] = useState(false);
   const [copyText, setCopyText] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleteNotice, setDeleteNotice] = useState<{
@@ -175,7 +180,9 @@ export function MediaLibrary({
 
       const deletedIds = result.deletedIds ?? [];
       const blocked = result.blocked ?? [];
-      const blockedNames = (reason: DeleteResponse["blocked"][number]["reason"]) =>
+      const blockedNames = (
+        reason: DeleteResponse["blocked"][number]["reason"],
+      ) =>
         blocked
           .filter((entry) => entry.reason === reason)
           .map(
@@ -217,58 +224,69 @@ export function MediaLibrary({
   const allSelected =
     items.length > 0 && items.every((item) => selected.includes(item.id));
   return (
-    <Box>
-      <Box
-        component="form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          changeFilter(kind, draft, 1);
-        }}
-        sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
-      >
-        <TextField
-          label="جست‌وجوی نام فایل"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          slotProps={{ htmlInput: { maxLength: 80 } }}
-          sx={{ maxWidth: 360 }}
-        />
-        <Button
-          type="submit"
-          variant="outlined"
-          size="small"
-          startIcon={<SearchOutlinedIcon />}
-        >
-          جست‌وجو
-        </Button>
-        <Button
-          size="small"
-          startIcon={<ClearOutlinedIcon />}
-          onClick={() => {
-            setDraft("");
-            changeFilter(allowedKind, "", 1);
+    <Box className="media-library">
+      <div className="media-library-filters">
+        <Box
+          component="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            changeFilter(kind, draft, 1);
           }}
+          sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}
         >
-          پاک‌کردن
-        </Button>
-      </Box>
-      {allowedKind === "all" && (
-        <FormControl size="small" sx={{ minWidth: 160, mb: 2 }}>
-          <InputLabel id={`${id}-kind`}>نوع رسانه</InputLabel>
-          <Select
-            labelId={`${id}-kind`}
-            label="نوع رسانه"
-            value={kind}
-            onChange={(event) =>
-              changeFilter(event.target.value as "all" | MediaKind, query, 1)
-            }
+          <TextField
+            label="جست‌وجوی نام فایل"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            slotProps={{
+              htmlInput: { maxLength: 80 },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlinedIcon aria-hidden="true" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ maxWidth: 360 }}
+          />
+          <Button
+            type="submit"
+            variant="outlined"
+            size="small"
+            startIcon={<SearchOutlinedIcon />}
           >
-            <MenuItem value="all">همه</MenuItem>
-            <MenuItem value="image">تصویر</MenuItem>
-            <MenuItem value="video">ویدئو</MenuItem>
-          </Select>
-        </FormControl>
-      )}
+            جست‌وجو
+          </Button>
+          <Button
+            size="small"
+            startIcon={<ClearOutlinedIcon />}
+            onClick={() => {
+              setDraft("");
+              changeFilter(allowedKind, "", 1);
+            }}
+          >
+            پاک‌کردن
+          </Button>
+        </Box>
+        {allowedKind === "all" && (
+          <FormControl size="small" sx={{ minWidth: 160, mb: 2 }}>
+            <InputLabel id={`${id}-kind`}>نوع رسانه</InputLabel>
+            <Select
+              labelId={`${id}-kind`}
+              label="نوع رسانه"
+              value={kind}
+              onChange={(event) =>
+                changeFilter(event.target.value as "all" | MediaKind, query, 1)
+              }
+            >
+              <MenuItem value="all">همه</MenuItem>
+              <MenuItem value="image">تصویر</MenuItem>
+              <MenuItem value="video">ویدئو</MenuItem>
+            </Select>
+          </FormControl>
+        )}
+      </div>
       {!onChoose && (
         <Alert severity="info" sx={{ mb: 2 }}>
           رسانه‌های مرتبط با محصولات، دسته‌بندی‌ها، مواد اولیه، سفارش‌ها یا
@@ -299,6 +317,7 @@ export function MediaLibrary({
         <>
           {!onChoose && (
             <Box
+              className="media-selection-bar"
               sx={{
                 display: "flex",
                 gap: 1,
@@ -343,6 +362,7 @@ export function MediaLibrary({
               </Button>
               <Button
                 disabled={!selected.length}
+                startIcon={<ContentCopyOutlinedIcon />}
                 onClick={() =>
                   void copyNames(
                     items
@@ -355,6 +375,7 @@ export function MediaLibrary({
               </Button>
               <Button
                 disabled={!selected.length}
+                startIcon={<ClearOutlinedIcon />}
                 onClick={() => setSelected([])}
               >
                 پاک‌کردن انتخاب
@@ -362,6 +383,7 @@ export function MediaLibrary({
             </Box>
           )}
           <Box
+            className="media-grid"
             sx={{
               display: "grid",
               gridTemplateColumns: {
@@ -375,6 +397,7 @@ export function MediaLibrary({
               <Box
                 key={item.id}
                 component="article"
+                className={`media-asset-card${selected.includes(item.id) ? " is-selected" : ""}`}
                 sx={{
                   border: "1px solid",
                   borderColor: "divider",
@@ -385,6 +408,7 @@ export function MediaLibrary({
                 }}
               >
                 <Box
+                  className="media-asset-preview"
                   sx={{
                     position: "relative",
                     aspectRatio: "4 / 3",
@@ -403,7 +427,7 @@ export function MediaLibrary({
                     />
                   )}
                 </Box>
-                <Box sx={{ p: 1 }}>
+                <Box className="media-asset-body" sx={{ p: 1 }}>
                   <Button
                     onClick={() => {
                       setVideoError(false);
@@ -418,6 +442,11 @@ export function MediaLibrary({
                     <bdi>{item.filename}</bdi>
                   </Button>
                   <Typography variant="body2">
+                    {item.kind === "image" ? (
+                      <ImageOutlinedIcon aria-hidden="true" />
+                    ) : (
+                      <MovieOutlinedIcon aria-hidden="true" />
+                    )}{" "}
                     {item.kind === "image" ? "تصویر" : "ویدئو"} ·{" "}
                     {new Intl.NumberFormat("fa-IR").format(
                       Math.ceil(item.length / 1024),
@@ -445,6 +474,11 @@ export function MediaLibrary({
                       <FormControlLabel
                         control={
                           <Checkbox
+                            slotProps={{
+                              input: {
+                                "aria-label": `انتخاب ${item.filename}`,
+                              },
+                            }}
                             checked={selected.includes(item.id)}
                             onChange={(event) =>
                               setSelected((ids) =>
@@ -455,7 +489,7 @@ export function MediaLibrary({
                             }
                           />
                         }
-                        label={`انتخاب ${item.filename}`}
+                        label="انتخاب"
                       />
                       <Button
                         color="error"
