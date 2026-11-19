@@ -58,7 +58,16 @@ export async function POST(request: Request) {
       if (result === "throttled")
         return failure("لطفاً کمی صبر کنید و دوباره تلاش کنید.", 429);
       return NextResponse.json(
-        { ok: true, message: "اگر شماره معتبر باشد، کد ارسال می‌شود." },
+        {
+          ok: true,
+          message: "اگر شماره معتبر باشد، کد ارسال می‌شود.",
+          developmentCode:
+            process.env.NODE_ENV === "development" &&
+            process.env.SMS_PROVIDER === "development" &&
+            process.env.OTP_DEV_LOG_CODES === "true"
+              ? "1234"
+              : undefined,
+        },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
@@ -95,19 +104,23 @@ export async function POST(request: Request) {
     }
     if (
       input.action === "register" &&
-      typeof input.name === "string" &&
+      typeof input.firstName === "string" &&
+      typeof input.lastName === "string" &&
       typeof input.password === "string" &&
       typeof input.confirmation === "string"
     ) {
       if (
-        input.name.trim().length < 2 ||
-        input.name.trim().length > 120 ||
-        input.password.length < 12 ||
+        !input.firstName.trim() ||
+        !input.lastName.trim() ||
+        input.firstName.trim().length > 60 ||
+        input.lastName.trim().length > 60 ||
+        `${input.firstName.trim()} ${input.lastName.trim()}`.length > 120 ||
+        input.password.length < 8 ||
         Buffer.byteLength(input.password, "utf8") > 1024 ||
         input.password !== input.confirmation
       ) {
         return failure(
-          "نام و رمز عبور را بررسی کنید؛ رمز باید حداقل ۱۲ نویسه باشد و با تکرار آن یکسان باشد.",
+          "نام و رمز عبور را بررسی کنید؛ رمز باید حداقل ۸ نویسه باشد و با تکرار آن یکسان باشد.",
           400,
         );
       }
@@ -115,7 +128,8 @@ export async function POST(request: Request) {
       const token = jar.get(ticketName)?.value ?? "";
       const session = await registerVerifiedCustomer(
         token,
-        input.name,
+        input.firstName,
+        input.lastName,
         input.password,
         input.confirmation,
       );
