@@ -58,10 +58,21 @@ export async function POST(request: Request) {
   try {
     await requirePrincipal("admin");
     const input = await readJsonObject(request);
-    if (typeof input.name !== "string" || typeof input.mobile !== "string")
+    if (
+      typeof input.firstName !== "string" ||
+      typeof input.lastName !== "string" ||
+      typeof input.mobile !== "string"
+    )
       throw new RangeError();
     if (input.action === "create")
-      return reply(await createAdminCustomer(input.name, input.mobile), 201);
+      return reply(
+        await createAdminCustomer(
+          input.firstName,
+          input.lastName,
+          input.mobile,
+        ),
+        201,
+      );
     if (
       input.action === "update" &&
       typeof input.id === "string" &&
@@ -70,7 +81,8 @@ export async function POST(request: Request) {
       return reply(
         await updateAdminCustomer(
           input.id,
-          input.name,
+          input.firstName,
+          input.lastName,
           input.mobile,
           input.expectedMobile,
         ),
