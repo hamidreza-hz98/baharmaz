@@ -1,9 +1,19 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import SpaOutlinedIcon from "@mui/icons-material/SpaOutlined";
 import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
   Checkbox,
   Radio,
   FormControlLabel,
@@ -11,6 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import { AdminThumbnail } from "@/admin/media/admin-thumbnail";
+import { MediaPicker } from "@/admin/media/media-picker";
 type Entry = {
   id: string;
   name: string;
@@ -35,7 +46,82 @@ export function CatalogSelector({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [version, setVersion] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [parents, setParents] = useState<
+    (Entry & { parentId?: string | null })[] | null
+  >(null);
+  const [parentsError, setParentsError] = useState(false);
+  const [imageId, setImageId] = useState<string | null>(null);
+  const [iconId, setIconId] = useState<string | null>(null);
+  const [picker, setPicker] = useState<"image" | "icon" | null>(null);
+  const [createError, setCreateError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const dialogId = useId();
   const singular = kind === "categories" ? "دسته‌بندی" : "ماده اولیه";
+  async function loadParents() {
+    setParents(null);
+    setParentsError(false);
+    try {
+      const response = await fetch("/api/admin/catalog/categories?order=all", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error();
+      setParents((await response.json()).items);
+    } catch {
+      setParentsError(true);
+    }
+  }
+  function openCreate() {
+    setName("");
+    setExcerpt("");
+    setParentId("");
+    setImageId(null);
+    setIconId(null);
+    setCreateError("");
+    setCreating(true);
+    if (kind === "categories") void loadParents();
+  }
+  async function create(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (saving) return;
+    if (kind === "ingredients" && !iconId) {
+      setCreateError("برای ماده اولیه آیکون انتخاب کنید.");
+      return;
+    }
+    setSaving(true);
+    setCreateError("");
+    try {
+      const response = await fetch(`/api/admin/catalog/${kind}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          name,
+          iconId,
+          ...(kind === "categories"
+            ? { excerpt, imageId, parentId: parentId || null }
+            : {}),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.item?.id) {
+        setCreateError(data.error || "ذخیره ممکن نشد.");
+        return;
+      }
+      onChange(kind === "categories" ? [data.item] : [...selected, data.item]);
+      setCreating(false);
+      setDraft("");
+      change("", 1);
+    } catch {
+      setCreateError("ارتباط برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setSaving(false);
+    }
+  }
   function change(nextQuery: string, nextPage: number) {
     setLoading(true);
     setError(false);
@@ -81,6 +167,27 @@ export function CatalogSelector({
       <Typography component="legend">
         {kind === "categories" ? "انتخاب دسته‌بندی" : "انتخاب مواد اولیه"}
       </Typography>
+      <div className="selector-heading">
+        <div>
+          <strong>
+            {kind === "categories" ? "دسته‌بندی محصول" : "مواد اولیه محصول"}
+          </strong>
+          <p>
+            {kind === "categories"
+              ? "یک دسته برای محصول انتخاب کنید."
+              : "مواد اولیه مرتبط را انتخاب کنید."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outlined"
+          size="small"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreate}
+        >
+          افزودن جدید
+        </Button>
+      </div>
       <Typography variant="body2">
         انتخاب‌شده: {selected.length ? "" : "هیچ‌کدام"}
       </Typography>
@@ -111,7 +218,12 @@ export function CatalogSelector({
           slotProps={{ htmlInput: { maxLength: 80 } }}
           sx={{ maxWidth: 300 }}
         />
-        <Button type="button" size="small" onClick={() => change(draft, 1)}>
+        <Button
+          type="button"
+          size="small"
+          startIcon={<SearchOutlinedIcon />}
+          onClick={() => change(draft, 1)}
+        >
           جست‌وجو
         </Button>
         <Button
@@ -250,6 +362,181 @@ export function CatalogSelector({
           صفحه بعد
         </Button>
       </Box>
+      <Dialog
+        open={creating}
+        onClose={saving ? undefined : () => setCreating(false)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby={dialogId}
+      >
+        <DialogTitle id={dialogId}>
+          <span className="selector-dialog-heading">
+            <span>
+              {kind === "categories" ? (
+                <CategoryOutlinedIcon aria-hidden="true" />
+              ) : (
+                <SpaOutlinedIcon aria-hidden="true" />
+              )}
+            </span>
+            <span>
+              افزودن {singular}
+              <small>پس از ذخیره، به محصول انتخاب می‌شود.</small>
+            </span>
+          </span>
+        </DialogTitle>
+        <Box component="form" onSubmit={create}>
+          <DialogContent className="selector-create-fields">
+            {createError && (
+              <Alert severity="error" role="alert">
+                {createError}
+              </Alert>
+            )}
+            <TextField
+              label={`نام ${singular}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoFocus
+              disabled={saving}
+              slotProps={{
+                htmlInput: { maxLength: kind === "categories" ? 120 : 80 },
+              }}
+            />
+            {kind === "categories" && (
+              <>
+                {parentsError && (
+                  <Alert
+                    severity="error"
+                    action={
+                      <Button type="button" onClick={() => void loadParents()}>
+                        تلاش دوباره
+                      </Button>
+                    }
+                  >
+                    دریافت دسته‌های اصلی ممکن نشد.
+                  </Alert>
+                )}
+                <TextField
+                  select
+                  label="دسته اصلی"
+                  value={parentId}
+                  onChange={(e) => setParentId(e.target.value)}
+                  disabled={saving || !parents}
+                  helperText="برای دسته اصلی، گزینه بدون دسته اصلی را انتخاب کنید."
+                >
+                  <MenuItem value="">بدون دسته اصلی</MenuItem>
+                  {(parents ?? [])
+                    .filter((p) => !p.parentId)
+                    .map((p) => (
+                      <MenuItem key={p.id} value={p.id}>
+                        {p.name}
+                      </MenuItem>
+                    ))}
+                </TextField>
+                <TextField
+                  label="توضیح کوتاه"
+                  multiline
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                  disabled={saving}
+                  slotProps={{ htmlInput: { maxLength: 300 } }}
+                />
+                <div className="selector-media-row">
+                  <AdminThumbnail
+                    id={imageId}
+                    name="تصویر دسته‌بندی"
+                    size={56}
+                  />
+                  <div>
+                    <strong>تصویر دسته‌بندی</strong>
+                    <p>
+                      {imageId
+                        ? "تصویر انتخاب شده است."
+                        : "انتخاب تصویر اختیاری است."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="small"
+                      startIcon={<AddPhotoAlternateOutlinedIcon />}
+                      onClick={() => setPicker("image")}
+                      disabled={saving}
+                    >
+                      انتخاب تصویر
+                    </Button>
+                    {imageId && (
+                      <Button
+                        type="button"
+                        size="small"
+                        onClick={() => setImageId(null)}
+                        disabled={saving}
+                      >
+                        حذف
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            <div className="selector-media-row">
+              <AdminThumbnail id={iconId} name="آیکون" size={56} />
+              <div>
+                <strong>آیکون {singular}</strong>
+                <p>
+                  {iconId
+                    ? "آیکون انتخاب شده است."
+                    : kind === "ingredients"
+                      ? "انتخاب آیکون الزامی است."
+                      : "انتخاب آیکون اختیاری است."}
+                </p>
+                <Button
+                  type="button"
+                  size="small"
+                  startIcon={<AddPhotoAlternateOutlinedIcon />}
+                  onClick={() => setPicker("icon")}
+                  disabled={saving}
+                >
+                  انتخاب آیکون
+                </Button>
+                {iconId && (
+                  <Button
+                    type="button"
+                    size="small"
+                    onClick={() => setIconId(null)}
+                    disabled={saving}
+                  >
+                    حذف
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+            <Button
+              type="button"
+              onClick={() => setCreating(false)}
+              disabled={saving}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={saving || (kind === "categories" && !parents)}
+            >
+              {saving ? "در حال ذخیره…" : `ذخیره ${singular}`}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+      <MediaPicker
+        open={picker !== null}
+        allowedKind="image"
+        onClose={() => setPicker(null)}
+        onSelect={(item) => {
+          if (picker === "image") setImageId(item.id);
+          else if (picker === "icon") setIconId(item.id);
+        }}
+      />
     </Box>
   );
 }
